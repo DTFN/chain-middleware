@@ -1,0 +1,166 @@
+// 应用插件：java基础插件、Spring Boot插件（版本2.5.3）和依赖管理插件（版本1.0.11.RELEASE）
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.5.3'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+}
+
+// 禁用bootJar任务，因为这是一个多模块项目，不在此处构建可执行jar
+bootJar.enabled = false
+
+// 定义所有项目的通用配置
+allprojects {
+    // 设置项目的组ID
+    group = 'com.lingshu'
+    // 设置项目的版本号
+    version = '1.0'
+    // 设置Java源代码兼容性版本为1.8
+    sourceCompatibility = '1.8'
+
+    // 配置项目的仓库地址
+    repositories {
+        // 配置私有Maven仓库
+        maven {
+            // 允许不安全的HTTP协议
+            allowInsecureProtocol true
+            // 私有仓库地址
+            url "http://192.168.1.2:8081/repository/maven-public/"
+            // 仓库认证信息
+            credentials {
+                username 'maven'
+                password '111'
+            }
+        }
+        // 阿里云Maven公共仓库镜像
+        maven { url "https://maven.aliyun.com/nexus/content/groups/public/" }
+        // 阿里云Maven公共仓库
+        maven {
+            url 'https://maven.aliyun.com/repository/public'
+        }
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/service/local/staging/deploy/maven2"}
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+    }
+
+    // 在项目评估完成后执行配置
+    gradle.projectsEvaluated {
+        // 配置所有Java编译任务
+        tasks.withType(JavaCompile) {
+            // 关闭所有编译警告
+            options.compilerArgs << '-Xlint:none'
+            options.compilerArgs << '-nowarn' // 与'-Xlint:none'相同效果
+
+            // 手动关闭特定类型的编译警告
+            options.compilerArgs << '-Xlint:-auxiliaryclass'
+            options.compilerArgs << '-Xlint:-cast'
+            options.compilerArgs << '-Xlint:-classfile'
+            options.compilerArgs << '-Xlint:-deprecation'
+            options.compilerArgs << '-Xlint:-dep-ann'
+            options.compilerArgs << '-Xlint:-divzero'
+            options.compilerArgs << '-Xlint:-empty'
+            options.compilerArgs << '-Xlint:-fallthrough'
+            options.compilerArgs << '-Xlint:-finally'
+            options.compilerArgs << '-Xlint:-options'
+            options.compilerArgs << '-Xlint:-overloads'
+            options.compilerArgs << '-Xlint:-overrides'
+            options.compilerArgs << '-Xlint:-path'
+            options.compilerArgs << '-Xlint:-processing'
+            options.compilerArgs << '-Xlint:-rawtypes'
+            options.compilerArgs << '-Xlint:-serial'
+            options.compilerArgs << '-Xlint:-static'
+            options.compilerArgs << '-Xlint:-try'
+            options.compilerArgs << '-Xlint:-unchecked'
+            options.compilerArgs << '-Xlint:-varargs'
+        }
+    }
+}
+
+// 配置所有子项目的设置
+subprojects {
+    // 应用插件：Spring Boot插件、依赖管理插件和Java库插件
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'java-library'
+
+    // 配置依赖项配置
+    configurations {
+        // 配置compileOnly配置继承自annotationProcessor配置
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    // 定义项目依赖
+    dependencies {
+        // Spring Boot Web启动器（包含Web开发所需依赖）
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        // Spring Boot AOP启动器（面向切面编程支持）
+        implementation 'org.springframework.boot:spring-boot-starter-aop'
+        // Spring Boot Validation启动器（数据校验支持）
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        // Spring Boot配置处理器（用于处理配置属性）
+        annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+        // Spring Boot测试启动器
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+        // Lombok注解处理器和依赖项
+        annotationProcessor 'org.projectlombok:lombok'
+        compileOnly 'org.projectlombok:lombok'
+        testCompileOnly 'org.projectlombok:lombok'
+        testAnnotationProcessor 'org.projectlombok:lombok'
+
+        // JUnit 4测试框架
+        testImplementation 'junit:junit:4.12'
+
+        // Hutool工具库（Java工具类集合）
+        implementation 'cn.hutool:hutool-all:5.8.18'
+
+        // MySQL JDBC驱动（运行时依赖）
+        runtimeOnly 'mysql:mysql-connector-java:5.1.40'
+
+        // Apache Commons Lang3工具库
+        implementation "org.apache.commons:commons-lang3:3.8.1"
+
+        // Apache Commons Pool2对象池工具库
+        implementation 'org.apache.commons:commons-pool2:2.11.0'
+
+        // Java Bean Validation API
+        implementation 'javax.validation:validation-api:2.0.1.Final'
+
+        // Google Guava工具库
+        implementation 'com.google.guava:guava:20.0'
+
+        // SpringFox Swagger启动器（API文档工具）
+        implementation("io.springfox:springfox-boot-starter:3.0.0") {
+            // 排除swagger-models模块以避免版本冲突
+            exclude group: "io.swagger", module: "swagger-models"
+        }
+
+        implementation 'com.github.xiaoymin:knife4j-openapi2-spring-boot-starter:4.2.0'
+
+        // Alibaba Fastjson JSON处理库
+        implementation 'com.alibaba:fastjson:1.2.58'
+
+        // Swagger Models库
+        implementation 'io.swagger:swagger-models:1.5.22'
+
+        // MyBatis Plus Spring Boot启动器
+//        implementation 'com.baomidou:mybatis-plus-boot-starter:3.4.0'
+
+        // Java Mail库
+        implementation 'javax.mail:mail:1.4.7'
+
+        // lock4j分布式锁Redis模板启动器
+        implementation 'com.baomidou:lock4j-redis-template-spring-boot-starter:2.2.2'
+
+        implementation 'com.squareup.okhttp3:okhttp:4.9.0'
+        implementation 'com.squareup.okhttp3:logging-interceptor:4.9.0'
+        implementation 'com.squareup.okio:okio:2.8.0'
+    }
+
+    // 配置测试任务
+    test {
+        // 使用JUnit Platform运行测试
+        useJUnitPlatform()
+    }
+}

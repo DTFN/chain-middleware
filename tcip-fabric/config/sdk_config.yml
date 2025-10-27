@@ -1,0 +1,96 @@
+version: 1.0.0
+
+client:
+  organization: Org1
+  logging:
+    level: info
+
+organizations:
+  Org1:
+    mspid: Org1MSP
+    peers:
+      - peer0.org1.example.com
+    cryptoPath: config/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+    users:
+      admin:
+        cert:
+          path: config/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem
+  Org2:
+    mspid: Org2MSP
+    peers:
+      - peer0.org2.example.com
+    cryptoPath: config/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
+    users:
+      admin:
+        cert:
+          path: config/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/Admin@org2.example.com-cert.pem
+
+channels:
+  mychannel:
+    orderers:
+      - orderer.example.com
+    peers:
+      peer0.org1.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+      peer0.org2.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+peers:
+  peer0.org1.example.com:
+    url: grpcs://192.168.1.144:7051
+    grpcOptions:
+      allow-insecure: false
+      fail-fast: false
+      keep-alive-permit: false
+      keep-alive-time: 30s
+      keep-alive-timeout: 30s
+      ssl-target-name-override: peer0.org1.example.com
+    tlsCACerts:
+      path: config/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+  peer0.org2.example.com:
+    url: grpcs://192.168.1.144:9051
+    grpcOptions:
+      allow-insecure: false
+      fail-fast: false
+      keep-alive-permit: false
+      keep-alive-time: 30s
+      keep-alive-timeout: 30s
+      ssl-target-name-override: peer0.org2.example.com
+    tlsCACerts:
+      path: config/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+orderers:
+  orderer.example.com:
+    url: grpcs://192.168.1.144:7050
+    grpcOptions:
+      allow-insecure: false
+      fail-fast: false
+      keep-alive-permit: false
+      keep-alive-time: 30s
+      keep-alive-timeout: 30s
+      ssl-target-name-override: orderer.example.com
+    tlsCACerts:
+      path: config/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+
+entityMatchers:
+  peer:
+    - pattern: peer0.org1.example.com
+      urlSubstitutionExp: 192.168.1.144:7051
+#      eventUrlSubstitutionExp: 192.168.1.144:7051
+      sslTargetOverrideUrlSubstitutionExp: peer0.org1.example.com
+      mappedHost: peer0.org1.example.com
+    - pattern: peer0.org2.example.com
+      urlSubstitutionExp: 192.168.1.144:9051
+#      eventUrlSubstitutionExp: 192.168.1.144:9051
+      sslTargetOverrideUrlSubstitutionExp: peer0.org2.example.com
+      mappedHost: peer0.org2.example.com
+
+  orderer:
+    - pattern: orderer.example.com
+      urlSubstitutionExp: 192.168.1.144:7050
+      sslTargetOverrideUrlSubstitutionExp: orderer.example.com
+      mappedHost: orderer.example.com

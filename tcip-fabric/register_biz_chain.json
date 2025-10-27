@@ -1,0 +1,45 @@
+{
+  "version": 0,
+  "operate": 0,
+  "fabric_config": {
+    "chain_rid": "chain004",
+    "chain_id": "mychannel",
+    "org": [
+      {
+        "org_id": "Org1",
+        "msp_id": "Org1MSP",
+        "sign_cert": "SIGNCERT",
+        "sign_key": "SIGNKEY",
+        "peers": [
+          {
+            "node_addr": "grpcs://192.168.1.144:7051",
+            "trust_root": ["PEERCA"],
+            "tls_host_name": "peer0.org1.example.com"
+          }
+        ]
+      },
+      {
+        "org_id": "Org2",
+        "msp_id": "Org2MSP",
+        "sign_cert": "SIGNCERT",
+        "sign_key": "SIGNKEY",
+        "peers": [
+          {
+            "node_addr": "grpcs://192.168.1.144:9051",
+            "trust_root": ["PEERCA"],
+            "tls_host_name": "peer0.org2.example.com"
+          }
+        ]
+      }
+    ],
+    "tls_cert": "TLSCERT",
+    "tls_key": "TLSKEY",
+    "orderers": [
+      {
+        "node_addr": "grpcs://192.168.1.144:7050",
+        "trust_root": ["ORDERERCA"],
+        "tls_host_name": "orderer.example.com"
+      }
+    ]
+  }
+}

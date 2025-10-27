@@ -1,0 +1,351 @@
+package com.lingshu.chain.contract;
+
+import com.lingshu.chain.sdk.client.IClient;
+import com.lingshu.chain.sdk.codec.datatypes.Bool;
+import com.lingshu.chain.sdk.codec.datatypes.Event;
+import com.lingshu.chain.sdk.codec.datatypes.Function;
+import com.lingshu.chain.sdk.codec.datatypes.Type;
+import com.lingshu.chain.sdk.codec.datatypes.TypeReference;
+import com.lingshu.chain.sdk.codec.datatypes.Utf8String;
+import com.lingshu.chain.sdk.codec.datatypes.generated.tuples.generated.Tuple1;
+import com.lingshu.chain.sdk.codec.datatypes.generated.tuples.generated.Tuple2;
+import com.lingshu.chain.sdk.contract.Contract;
+import com.lingshu.chain.sdk.crypto.CryptoSuite;
+import com.lingshu.chain.sdk.crypto.key.CryptoKeyPair;
+import com.lingshu.chain.sdk.evtsub.EvtSubCallback;
+import com.lingshu.chain.sdk.model.CryptoType;
+import com.lingshu.chain.sdk.model.TransactionCallback;
+import com.lingshu.chain.sdk.model.TransactionReceipt;
+import com.lingshu.chain.sdk.tx.common.VmTypeEnum;
+import com.lingshu.chain.sdk.tx.common.exception.ContractException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+@SuppressWarnings("unchecked")
+public class DIDManager extends Contract {
+    public static final String FUNC_CREATE_DID = "createDID";
+
+    public static final String FUNC_GET_DID_DETAILS = "getDIDDetails";
+
+    public static final String FUNC_UPDATE_DID = "updateDID";
+
+    public static final String FUNC_DOES_DID_EXIST = "doesDIDExist";
+
+    public static final String FUNC_ECHO = "echo";
+
+    public static final String[] ABI_ARRAY = {"[{\"constant\":false,\"inputs\":[{\"name\":\"did\",\"type\":\"string\"},{\"name\":\"didDocument\",\"type\":\"string\"}],\"name\":\"createDID\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"did\",\"type\":\"string\"}],\"name\":\"getDIDDetails\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"did\",\"type\":\"string\"},{\"name\":\"newDidDocument\",\"type\":\"string\"}],\"name\":\"updateDID\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"did\",\"type\":\"string\"}],\"name\":\"doesDIDExist\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"did\",\"type\":\"string\"}],\"name\":\"echo\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"did\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"didDocument\",\"type\":\"string\"}],\"name\":\"DIDModify\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"did\",\"type\":\"string\"}],\"name\":\"Result\",\"type\":\"event\"}]"};
+
+    public static final String ABI = com.lingshu.chain.sdk.codegen.util.GeneratorUtil.joinAll("", ABI_ARRAY);
+
+    public static final String[] BINARY_ARRAY = {"608060405234801561001057600080fd5b50610892806100206000396000f30060806040526004361061006d576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680631539a50714610072578063a3a7c60b146100c5578063b42a02b514610179578063dd742fa5146101cc578063f15da7291461021f575b600080fd5b34801561007e57600080fd5b506100c36004803603810190808035906020019082018035906020019190919293919293908035906020019082018035906020019190919293919293905050506102d3565b005b3480156100d157600080fd5b506100fe600480360381019080803590602001908201803590602001919091929391929390505050610466565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561013e578082015181840152602081019050610123565b50505050905090810190601f16801561016b5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561018557600080fd5b506101ca60048036038101908080359060200190820180359060200191909192939192939080359060200190820180359060200191909192939192939050505061060b565b005b3480156101d857600080fd5b506102056004803603810190808035906020019082018035906020019190919293919293905050506106f6565b604051808215151515815260200191505060405180910390f35b34801561022b57600080fd5b50610258600480360381019080803590602001908201803590602001919091929391929390505050610733565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561029857808201518184015260208101905061027d565b50505050905090810190601f1680156102c55780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6001848460405180838380828437820191505092505050908152602001604051809103902060009054906101000a900460ff1615151561037b576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040180806020018281038252601e8152602001807f4449444d616e616765723a2044494420616c726561647920657869737473000081525060200191505060405180910390fd5b81816000868660405180838380828437820191505092505050908152602001604051809103902091906103af9291906107c1565b50600180858560405180838380828437820191505092505050908152602001604051809103902060006101000a81548160ff0219169083151502179055507fbc4b9177d949f0995aac6fc1e139b1e35a50170b6e9ca10360f73c3ac103d905848484846040518080602001806020018381038352878782818152602001925080828437820191505083810382528585828181526020019250808284378201915050965050505050505060405180910390a150505050565b60607ff5250111a819ab87d27490e1837d465f4bc000cfd9316fc90fde27c791d8026d6000848460405180838380828437820191505092505050908152602001604051809103902060405180806020018281038252838181546001816001161561010002031660029004815260200191508054600181600116156101000203166002900480156105375780601f1061050c57610100808354040283529160200191610537565b820191906000526020600020905b81548152906001019060200180831161051a57829003601f168201915b50509250505060405180910390a1600083836040518083838082843782019150509250505090815260200160405180910390208054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156105fe5780601f106105d3576101008083540402835291602001916105fe565b820191906000526020600020905b8154815290600101906020018083116105e157829003601f168201915b5050505050905092915050565b818160008686604051808383808284378201915050925050509081526020016040518091039020919061063f9291906107c1565b50600180858560405180838380828437820191505092505050908152602001604051809103902060006101000a81548160ff0219169083151502179055507fbc4b9177d949f0995aac6fc1e139b1e35a50170b6e9ca10360f73c3ac103d905848484846040518080602001806020018381038352878782818152602001925080828437820191505083810382528585828181526020019250808284378201915050965050505050505060405180910390a150505050565b60006001838360405180838380828437820191505092505050908152602001604051809103902060009054906101000a900460ff16905092915050565b60607ff5250111a819ab87d27490e1837d465f4bc000cfd9316fc90fde27c791d8026d8383604051808060200182810382528484828181526020019250808284378201915050935050505060405180910390a182828080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050905092915050565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061080257803560ff1916838001178555610830565b82800160010185558215610830579182015b8281111561082f578235825591602001919060010190610814565b5b50905061083d9190610841565b5090565b61086391905b8082111561085f576000816000905550600101610847565b5090565b905600a165627a7a723058205b689745f6db4f7ca0b9e53b5789d11dab70df5eaf8a3787d31e04d392eeb4050029"};
+
+    public static final String BINARY = com.lingshu.chain.sdk.codegen.util.GeneratorUtil.joinAll("", BINARY_ARRAY);
+
+    public static final String[] SM_BINARY_ARRAY = {"608060405234801561001057600080fd5b50610892806100206000396000f30060806040526004361061006d576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680634913a9a11461007257806374a27ec214610126578063b197713214610179578063c00059e5146101cc578063e1ed624c1461021f575b600080fd5b34801561007e57600080fd5b506100ab6004803603810190808035906020019082018035906020019190919293919293905050506102d3565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156100eb5780820151818401526020810190506100d0565b50505050905090810190601f1680156101185780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561013257600080fd5b50610177600480360381019080803590602001908201803590602001919091929391929390803590602001908201803590602001919091929391929390505050610361565b005b34801561018557600080fd5b506101b260048036038101908080359060200190820180359060200191909192939192939050505061044c565b604051808215151515815260200191505060405180910390f35b3480156101d857600080fd5b5061021d600480360381019080803590602001908201803590602001919091929391929390803590602001908201803590602001919091929391929390505050610489565b005b34801561022b57600080fd5b5061025860048036038101908080359060200190820180359060200191909192939192939050505061061c565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561029857808201518184015260208101905061027d565b50505050905090810190601f1680156102c55780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b60607f656ff79fc8ffe47f9ecbdcb5599c2d1d152eb661190964bfe97fbdca3eea50328383604051808060200182810382528484828181526020019250808284378201915050935050505060405180910390a182828080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050905092915050565b81816000868660405180838380828437820191505092505050908152602001604051809103902091906103959291906107c1565b50600180858560405180838380828437820191505092505050908152602001604051809103902060006101000a81548160ff0219169083151502179055507fc40bd4c8b1923a877fd83a34670f7018ddd78ca59c2e5358c09c2854402995cb848484846040518080602001806020018381038352878782818152602001925080828437820191505083810382528585828181526020019250808284378201915050965050505050505060405180910390a150505050565b60006001838360405180838380828437820191505092505050908152602001604051809103902060009054906101000a900460ff16905092915050565b6001848460405180838380828437820191505092505050908152602001604051809103902060009054906101000a900460ff16151515610531576040517fc703cb1200000000000000000000000000000000000000000000000000000000815260040180806020018281038252601e8152602001807f4449444d616e616765723a2044494420616c726561647920657869737473000081525060200191505060405180910390fd5b81816000868660405180838380828437820191505092505050908152602001604051809103902091906105659291906107c1565b50600180858560405180838380828437820191505092505050908152602001604051809103902060006101000a81548160ff0219169083151502179055507fc40bd4c8b1923a877fd83a34670f7018ddd78ca59c2e5358c09c2854402995cb848484846040518080602001806020018381038352878782818152602001925080828437820191505083810382528585828181526020019250808284378201915050965050505050505060405180910390a150505050565b60607f656ff79fc8ffe47f9ecbdcb5599c2d1d152eb661190964bfe97fbdca3eea50326000848460405180838380828437820191505092505050908152602001604051809103902060405180806020018281038252838181546001816001161561010002031660029004815260200191508054600181600116156101000203166002900480156106ed5780601f106106c2576101008083540402835291602001916106ed565b820191906000526020600020905b8154815290600101906020018083116106d057829003601f168201915b50509250505060405180910390a1600083836040518083838082843782019150509250505090815260200160405180910390208054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156107b45780601f10610789576101008083540402835291602001916107b4565b820191906000526020600020905b81548152906001019060200180831161079757829003601f168201915b5050505050905092915050565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061080257803560ff1916838001178555610830565b82800160010185558215610830579182015b8281111561082f578235825591602001919060010190610814565b5b50905061083d9190610841565b5090565b61086391905b8082111561085f576000816000905550600101610847565b5090565b905600a165627a7a7230582052bf2fc6da94e7e29a803840d3f14f1e615a61e2cb99bc1132197c63459857980029"};
+
+    public static final String SM_BINARY = com.lingshu.chain.sdk.codegen.util.GeneratorUtil.joinAll("", SM_BINARY_ARRAY);
+
+    public static final Event DID_MODIFY_EVENT = new Event("DIDModify", 
+            Arrays.<TypeReference<?>>asList(new TypeReference<Utf8String>() {}, new TypeReference<Utf8String>() {}));
+    ;
+
+    public static final Event RESULT_EVENT = new Event("Result", 
+            Arrays.<TypeReference<?>>asList(new TypeReference<Utf8String>() {}));
+    ;
+
+    protected DIDManager(String contractAddress, IClient client, CryptoKeyPair credential) {
+        super(getBinary(client.getCryptoSuite()), contractAddress, client, credential);
+    }
+
+    protected DIDManager(String contractAddress, IClient client, CryptoKeyPair credential, VmTypeEnum vmType) {
+        super(getBinary(client.getCryptoSuite()), contractAddress, client, credential, vmType);
+    }
+
+    protected DIDManager(String contractAddress, IClient client, CryptoKeyPair credential, String binary) {
+        super(binary, contractAddress, client, credential);
+    }
+
+    protected DIDManager(String contractAddress, IClient client, CryptoKeyPair credential, VmTypeEnum vmType, String binary) {
+        super(binary, contractAddress, client, credential, vmType);
+    }
+
+    public static DIDManager deploy(IClient client, CryptoKeyPair credential) throws ContractException {
+        return deploy(DIDManager.class, client, credential, getBinary(client.getCryptoSuite()), "");
+    }
+
+    public static DIDManager deploy(IClient client, CryptoKeyPair credential, String binary) throws ContractException {
+        return deploy(DIDManager.class, client, credential, binary, "");
+    }
+
+    public static DIDManager deploy(IClient client, CryptoKeyPair credential, VmTypeEnum vmType) throws ContractException {
+        return deploy(DIDManager.class, client, credential, getBinary(client.getCryptoSuite()), "", vmType);
+    }
+
+    public static DIDManager deploy(IClient client, CryptoKeyPair credential, VmTypeEnum vmType, String binary) throws ContractException {
+        return deploy(DIDManager.class, client, credential, binary, "", vmType);
+    }
+
+    public static DIDManager load(String contractAddress, IClient client, CryptoKeyPair credential) {
+        return new DIDManager(contractAddress, client, credential);
+    }
+
+    public static DIDManager load(String contractAddress, IClient client, CryptoKeyPair credential, VmTypeEnum vmType) {
+        return new DIDManager(contractAddress, client, credential, vmType);
+    }
+
+    public static DIDManager load(String contractAddress, IClient client, CryptoKeyPair credential, String binary) {
+        return new DIDManager(contractAddress, client, credential, binary);
+    }
+
+    public static DIDManager load(String contractAddress, IClient client, CryptoKeyPair credential, VmTypeEnum vmType, String binary) {
+        return new DIDManager(contractAddress, client, credential, vmType, binary);
+    }
+
+    public TransactionReceipt createDID(String did, String didDocument) {
+        final Function function = new Function(
+                FUNC_CREATE_DID, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did), 
+                new com.lingshu.chain.sdk.codec.datatypes.Utf8String(didDocument)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeTransaction(function);
+    }
+
+    public byte[] createDID(String did, String didDocument, TransactionCallback callback) {
+        final Function function = new Function(
+                FUNC_CREATE_DID, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did), 
+                new com.lingshu.chain.sdk.codec.datatypes.Utf8String(didDocument)), 
+                Collections.<TypeReference<?>>emptyList());
+        return asyncExecuteTransaction(function, callback);
+    }
+
+    public String getSignedTxForCreateDID(String did, String didDocument) {
+        final Function function = new Function(
+                FUNC_CREATE_DID, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did), 
+                new com.lingshu.chain.sdk.codec.datatypes.Utf8String(didDocument)), 
+                Collections.<TypeReference<?>>emptyList());
+        return createSignedTransaction(function);
+    }
+
+    public Tuple2<String, String> getCreateDIDInput(TransactionReceipt txReceipt) {
+        String data = txReceipt.getInput().substring(10);
+        final Function function = new Function(FUNC_CREATE_DID, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Utf8String>() {}, new TypeReference<Utf8String>() {}));
+        List<Type> results = funcReturnDecoder.decode(data, function.getOutputParameters());
+        return new Tuple2<String, String>(
+
+                (String) results.get(0).getValue(), 
+                (String) results.get(1).getValue()
+                );
+    }
+
+    public TransactionReceipt getDIDDetails(String did) {
+        final Function function = new Function(
+                FUNC_GET_DID_DETAILS, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeTransaction(function);
+    }
+
+    public byte[] getDIDDetails(String did, TransactionCallback callback) {
+        final Function function = new Function(
+                FUNC_GET_DID_DETAILS, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did)), 
+                Collections.<TypeReference<?>>emptyList());
+        return asyncExecuteTransaction(function, callback);
+    }
+
+    public String getSignedTxForGetDIDDetails(String did) {
+        final Function function = new Function(
+                FUNC_GET_DID_DETAILS, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did)), 
+                Collections.<TypeReference<?>>emptyList());
+        return createSignedTransaction(function);
+    }
+
+    public Tuple1<String> getGetDIDDetailsInput(TransactionReceipt txReceipt) {
+        String data = txReceipt.getInput().substring(10);
+        final Function function = new Function(FUNC_GET_DID_DETAILS, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Utf8String>() {}));
+        List<Type> results = funcReturnDecoder.decode(data, function.getOutputParameters());
+        return new Tuple1<String>(
+
+                (String) results.get(0).getValue()
+                );
+    }
+
+    public Tuple1<String> getGetDIDDetailsOutput(TransactionReceipt transactionReceipt) {
+        String data = transactionReceipt.getOutput();
+        final Function function = new Function(FUNC_GET_DID_DETAILS, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Utf8String>() {}));
+        List<Type> results = funcReturnDecoder.decode(data, function.getOutputParameters());
+        return new Tuple1<String>(
+
+                (String) results.get(0).getValue()
+                );
+    }
+
+    public TransactionReceipt updateDID(String did, String newDidDocument) {
+        final Function function = new Function(
+                FUNC_UPDATE_DID, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did), 
+                new com.lingshu.chain.sdk.codec.datatypes.Utf8String(newDidDocument)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeTransaction(function);
+    }
+
+    public byte[] updateDID(String did, String newDidDocument, TransactionCallback callback) {
+        final Function function = new Function(
+                FUNC_UPDATE_DID, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did), 
+                new com.lingshu.chain.sdk.codec.datatypes.Utf8String(newDidDocument)), 
+                Collections.<TypeReference<?>>emptyList());
+        return asyncExecuteTransaction(function, callback);
+    }
+
+    public String getSignedTxForUpdateDID(String did, String newDidDocument) {
+        final Function function = new Function(
+                FUNC_UPDATE_DID, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did), 
+                new com.lingshu.chain.sdk.codec.datatypes.Utf8String(newDidDocument)), 
+                Collections.<TypeReference<?>>emptyList());
+        return createSignedTransaction(function);
+    }
+
+    public Tuple2<String, String> getUpdateDIDInput(TransactionReceipt txReceipt) {
+        String data = txReceipt.getInput().substring(10);
+        final Function function = new Function(FUNC_UPDATE_DID, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Utf8String>() {}, new TypeReference<Utf8String>() {}));
+        List<Type> results = funcReturnDecoder.decode(data, function.getOutputParameters());
+        return new Tuple2<String, String>(
+
+                (String) results.get(0).getValue(), 
+                (String) results.get(1).getValue()
+                );
+    }
+
+    public Boolean doesDIDExist(String did) throws ContractException {
+        final Function function = new Function(FUNC_DOES_DID_EXIST, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
+        return executeCallWithSingleValueReturn(function, Boolean.class);
+    }
+
+    public TransactionReceipt echo(String did) {
+        final Function function = new Function(
+                FUNC_ECHO, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeTransaction(function);
+    }
+
+    public byte[] echo(String did, TransactionCallback callback) {
+        final Function function = new Function(
+                FUNC_ECHO, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did)), 
+                Collections.<TypeReference<?>>emptyList());
+        return asyncExecuteTransaction(function, callback);
+    }
+
+    public String getSignedTxForEcho(String did) {
+        final Function function = new Function(
+                FUNC_ECHO, 
+                Arrays.<Type>asList(new com.lingshu.chain.sdk.codec.datatypes.Utf8String(did)), 
+                Collections.<TypeReference<?>>emptyList());
+        return createSignedTransaction(function);
+    }
+
+    public Tuple1<String> getEchoInput(TransactionReceipt txReceipt) {
+        String data = txReceipt.getInput().substring(10);
+        final Function function = new Function(FUNC_ECHO, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Utf8String>() {}));
+        List<Type> results = funcReturnDecoder.decode(data, function.getOutputParameters());
+        return new Tuple1<String>(
+
+                (String) results.get(0).getValue()
+                );
+    }
+
+    public Tuple1<String> getEchoOutput(TransactionReceipt transactionReceipt) {
+        String data = transactionReceipt.getOutput();
+        final Function function = new Function(FUNC_ECHO, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Utf8String>() {}));
+        List<Type> results = funcReturnDecoder.decode(data, function.getOutputParameters());
+        return new Tuple1<String>(
+
+                (String) results.get(0).getValue()
+                );
+    }
+
+    public List<DIDModifyEvtResp> getDIDModifyEvents(TransactionReceipt txReceipt) {
+        List<Contract.EvtValuesWithLog> valueList = extractEventParametersWithLog(DID_MODIFY_EVENT, txReceipt);
+        ArrayList<DIDModifyEvtResp> responseList = new ArrayList<DIDModifyEvtResp>(valueList.size());
+        for (Contract.EvtValuesWithLog eventValues : valueList) {
+            DIDModifyEvtResp evtResp = new DIDModifyEvtResp();
+            evtResp.log = eventValues.getLog();
+            evtResp.did = (String) eventValues.getNonIndexedValues().get(0).getValue();
+            evtResp.didDocument = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            responseList.add(evtResp);
+        }
+        return responseList;
+    }
+
+    public void subscribeDIDModifyEvent(String fromBlock, String toBlock, List<String> otherTopics, EvtSubCallback callback) {
+        String topic0 = evtEncoder.encode(DID_MODIFY_EVENT);
+        subscribeEvent(ABI,BINARY,topic0,fromBlock,toBlock,otherTopics,callback);
+    }
+
+    public void subscribeDIDModifyEvent(EvtSubCallback callback) {
+        String topic0 = evtEncoder.encode(DID_MODIFY_EVENT);
+        subscribeEvent(ABI,BINARY,topic0,callback);
+    }
+
+    public List<ResultEvtResp> getResultEvents(TransactionReceipt txReceipt) {
+        List<Contract.EvtValuesWithLog> valueList = extractEventParametersWithLog(RESULT_EVENT, txReceipt);
+        ArrayList<ResultEvtResp> responseList = new ArrayList<ResultEvtResp>(valueList.size());
+        for (Contract.EvtValuesWithLog eventValues : valueList) {
+            ResultEvtResp evtResp = new ResultEvtResp();
+            evtResp.log = eventValues.getLog();
+            evtResp.did = (String) eventValues.getNonIndexedValues().get(0).getValue();
+            responseList.add(evtResp);
+        }
+        return responseList;
+    }
+
+    public void subscribeResultEvent(String fromBlock, String toBlock, List<String> otherTopics, EvtSubCallback callback) {
+        String topic0 = evtEncoder.encode(RESULT_EVENT);
+        subscribeEvent(ABI,BINARY,topic0,fromBlock,toBlock,otherTopics,callback);
+    }
+
+    public void subscribeResultEvent(EvtSubCallback callback) {
+        String topic0 = evtEncoder.encode(RESULT_EVENT);
+        subscribeEvent(ABI,BINARY,topic0,callback);
+    }
+
+    public static String getBinary(CryptoSuite cryptoSuite) {
+        return (cryptoSuite.getCryptoType() == CryptoType.ECDSA_TYPE ? BINARY : SM_BINARY);
+    }
+
+    public static class DIDModifyEvtResp {
+        public TransactionReceipt.Logs log;
+
+        public String did;
+
+        public String didDocument;
+    }
+
+    public static class ResultEvtResp {
+        public TransactionReceipt.Logs log;
+
+        public String did;
+    }
+}

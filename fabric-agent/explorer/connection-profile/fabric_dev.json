@@ -1,0 +1,48 @@
+{
+    "name": "fabric_dev",
+    "version": "1.0.0",
+    "client": {
+        "tlsEnable": true,
+        "adminCredential": {
+            "id": "exploreradmin",
+            "password": "exploreradminpw"
+        },
+        "enableAuthentication": false,
+        "organization": "org1szhcomMSP",
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                },
+                "orderer": "300"
+            }
+        }
+    },
+    "channels": {
+        "channel1": {
+            "peers": {
+                "peer0.org1.szh.com": {}
+            }
+        }
+    },
+    "organizations": {
+        "org1szhcomMSP": {
+            "mspid": "org1szhcomMSP",
+            "adminPrivateKey": {
+                "path": "/tmp/crypto/peerOrganizations/org1.szh.com/users/Admin@org1.szh.com/msp/keystore/priv_sk"
+            },
+            "peers": ["peer0.org1.szh.com"],
+            "signedCert": {
+                "path": "/tmp/crypto/peerOrganizations/org1.szh.com/users/Admin@org1.szh.com/msp/signcerts/cert.pem"
+            }
+        }
+    },
+    "peers": {
+        "peer0.org1.szh.com": {
+            "tlsCACerts": {
+                "path": "/tmp/crypto/peerOrganizations/org1.szh.com/peers/peer0.org1.szh.com/tls/ca.crt"
+            },
+            "url": "grpcs://192.168.3.128:7051"
+        }
+    }
+}

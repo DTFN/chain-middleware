@@ -1,0 +1,605 @@
+package com.lingshu.server.core.web3j.service;
+
+import cn.hutool.core.lang.Assert;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
+import com.google.protobuf.ByteString;
+import com.lingshu.chain.sdk.util.HexUtil;
+import com.lingshu.chain.sdk.util.JsonUtil;
+import com.lingshu.server.common.api.ApiException;
+import com.lingshu.server.common.api.OpenAPIResp;
+import com.lingshu.server.core.bcos.IBcosService;
+import com.lingshu.server.core.bsc.service.BscBusinessContractService2;
+import com.lingshu.server.core.business.BusinessService;
+import com.lingshu.server.core.enums.ContractTypeEnum;
+import com.lingshu.server.core.ethereum.contract.BusinessContract2;
+import com.lingshu.server.core.ethereum.service.EthereumBusinessContractService2;
+import com.lingshu.server.core.fabric.FabricService;
+import com.lingshu.server.core.lingshu.contract.LsBusinessContract2;
+import com.lingshu.server.core.lingshu.service.LingshuBusinessContractService2;
+import com.lingshu.server.core.web3j.contract.BusinessContract4Wasm;
+import com.lingshu.server.dto.*;
+import com.lingshu.server.dto.resp.busi.TxHashResp;
+import com.lingshu.server.utils.EthDecoderUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.web3j.protocol.core.RemoteFunctionCall;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+
+import javax.annotation.Resource;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.lingshu.server.core.enums.ContractTypeEnum.FABRIC_WASM;
+
+/**
+ * @author: derrick
+ * @since: 2025-08-26
+ */
+@Slf4j
+@Service
+public class ContractService {
+    @Autowired
+    private BusinessContractService chainmakerSolidityService;
+
+    @Autowired
+    private BusinessContract4WasmService chainmakerWasmService;
+
+    @Autowired
+    private BusinessService businessService;
+
+    @Autowired
+    private LingshuBusinessContractService2 lingshuBusinessContractService;
+
+    @Autowired
+    private EthereumBusinessContractService2 ethereumBusinessContractService;
+
+    //bcos api
+    @Autowired
+    private IBcosService bcosService;
+
+    @Resource
+    private FabricService fabricService;
+
+    private String FABRIC_CHANNEL_ID = "mychannel";
+    private String FABRIC_CHAIN_CODE_VERSION = "1.0";
+    private String FABRIC_LANG = "golang";
+
+    //bsc
+    @Autowired
+    private BscBusinessContractService2 bscBusinessContractService;
+
+    public Map<String, Object> deploy(BusinessContractRequest request) throws Exception {
+        ContractTypeEnum contractTypeEnum = request.getContractType();
+        Map<String, Object> map = new HashMap<>();
+        switch (contractTypeEnum) {
+//            case CHAINMAKER_SOLIDITY:
+//                BusinessContract businessContract = chainmakerSolidityService.deploy(request.getContractName(),
+//                        request.getVersion(), request.getFilePath());
+//                map.put("address", businessContract.getDeployInfo().getContract().getAddress());
+//                map.put("txHash", businessContract.getDeployInfo().getTransactionReceipt().getTransactionHash());
+//                break;
+            case CHAINMAKER_WASM:
+                BusinessContract4Wasm businessContract4Wasm = chainmakerWasmService.deploy(request.getContractName(),
+                        request.getVersion(), request.getFilePath());
+                map.put("address", businessContract4Wasm.getDeployInfo().getContract().getAddress());
+                map.put("txHash", businessContract4Wasm.getDeployInfo().getTransactionReceipt().getTransactionHash());
+                break;
+//            case LINGSHU_SOLIDITY:
+//                lingshuBusinessContractService.deploy(request.getContractName(), request.getVersion(), request.getFilePath());
+//            break;
+            case ETHEREUM_SOLIDITY:
+                TransactionReceipt transactionReceipt = ethereumBusinessContractService.deploy(request.getFilePath());
+                map.put("address", transactionReceipt.getContractAddress());
+                map.put("txHash", transactionReceipt.getTransactionHash());
+                break;
+            case BCOS_SOLIDITY:
+                throw new ApiException("不支持bcos链合约部署");
+//                OpenAPIResp openAPIResp = bcosService.deploy(request);
+//                log.info("保存deployContract成功: {}", openAPIResp);
+//                Object data = openAPIResp.getData();
+//                if (data != null) {
+//                    JSONObject jsonObject1 = JSONUtil.parseObj(data);
+//                    map.put("address", jsonObject1.getStr("address"));
+//                    map.put("txHash", jsonObject1.getStr("txHash"));
+//                }
+//                break;
+            case BSC_SOLIDITY:
+                TransactionReceipt transactionReceipt1 = bscBusinessContractService.deploy(request.getFilePath());
+                map.put("address", transactionReceipt1.getContractAddress());
+                map.put("txHash", transactionReceipt1.getTransactionHash());
+                break;
+            default:
+                throw new ApiException("非法参数");
+        }
+
+        return map;
+    }
+
+    public TxHashResp call(String param) throws Exception {
+        VerifiableCredentialListDto request = JSONUtil.toBean(param, VerifiableCredentialListDto.class);
+        if (request.getOrigin() == null) {
+            throw new ApiException("非法参数, origin为空");
+        }
+        VerifiableCredentialDto originObject = request.getOrigin();
+        if (originObject.getCredentialSubject() == null) {
+            throw new ApiException("非法参数");
+        }
+        VerifiableCredentialDto.CredentialSubject credentialSubject = originObject.getCredentialSubject();
+        String resourceName = credentialSubject.getResourceName();
+        String gatewayId = credentialSubject.getGatewayId();
+        String chainRid = credentialSubject.getChainRid();
+        String contractType = credentialSubject.getContractType();
+        String contractAddress = credentialSubject.getContractAddress();
+        String contractFunc = credentialSubject.getContractFunc();
+        Object funcParams = credentialSubject.getFuncParams();
+        String key = credentialSubject.getKey();
+        String paramName = credentialSubject.getParamName();
+
+        ContractTypeEnum contractTypeEnum = ContractTypeEnum.getByCode(contractType);
+        TxHashResp txHashResp = new TxHashResp();
+        switch (contractTypeEnum) {
+//            case CHAINMAKER_SOLIDITY:
+//                BusinessContract businessContract = chainmakerSolidityService.load(contractAddress);
+////                TransactionReceipt erc20GetBalance = businessContract.call("erc20GetBalance",
+////                        "0xe9f5d5ea58ed76c0780564ad3d5fae3a524e1111");
+//                TransactionReceipt transactionReceipt = businessContract.call(contractFunc, param);
+//                log.info("保存成功: {}", transactionReceipt);
+//                map.put("txHash", transactionReceipt.getTransactionHash());
+////                String businessDetails = businessContract.getBusinessDetails(key);
+//                //log.info("查询成功: {}", businessDetails);
+//                break;
+            case CHAINMAKER_WASM:
+                BusinessContract4Wasm businessContract4Wasm = chainmakerWasmService.load(contractAddress);
+                TransactionReceipt transactionReceipt1 = null;
+                if ("createDID".equals(contractFunc) || "updateDID".equals(contractFunc)) {
+                    JSONObject funcParams1 = JSONUtil.parseObj(credentialSubject.getFuncParams());
+                    String did = funcParams1.getStr("did");
+                    String didDocument = funcParams1.getStr("didDocument");
+                    Map<String, byte[]> paramsMap = new HashMap<>();
+                    paramsMap.put("did", did.getBytes());
+                    paramsMap.put("didDoc", didDocument.getBytes());
+                    transactionReceipt1 = businessContract4Wasm.call(contractFunc, paramsMap);
+                } else {
+                    Map<String, byte[]> paramsMap = new HashMap<>();
+                    paramsMap.put(paramName, param.getBytes());
+                    transactionReceipt1 = businessContract4Wasm.call(contractFunc, paramsMap);
+                }
+                log.info("保存成功: {}", transactionReceipt1);
+                txHashResp.setTxHash(transactionReceipt1.getTransactionHash());
+                break;
+            case LINGSHU_SOLIDITY:
+                LsBusinessContract2 businessContract1 = lingshuBusinessContractService.load(contractAddress);
+                com.lingshu.chain.sdk.model.TransactionReceipt transactionReceipt = null;
+                if ("createDID".equals(contractFunc) || "updateDID".equals(contractFunc)) {
+                    JSONObject funcParams1 = JSONUtil.parseObj(credentialSubject.getFuncParams());
+                    String did = funcParams1.getStr("did");
+                    String didDocument = funcParams1.getStr("didDocument");
+                    transactionReceipt = businessContract1.call(contractFunc, did, didDocument);
+                } else {
+                    transactionReceipt = businessContract1.call(contractFunc, param);
+                }
+
+                // 验证status
+                int status = transactionReceipt.getStatus();
+                Assert.isTrue(status == 0, () -> new ApiException("交易失败，code：" + status));
+
+                log.info("保存成功: {}", transactionReceipt);
+                txHashResp.setTxHash(transactionReceipt.getTransactionHash());
+                break;
+            case ETHEREUM_SOLIDITY:
+                BusinessContract2 businessContract2 = ethereumBusinessContractService.load(contractAddress);
+                RemoteFunctionCall<TransactionReceipt> transactionReceiptRemoteFunctionCall = null;
+                if ("createDID".equals(contractFunc) || "updateDID".equals(contractFunc)) {
+                    JSONObject funcParams1 = JSONUtil.parseObj(credentialSubject.getFuncParams());
+                    String did = funcParams1.getStr("did");
+                    String didDocument = funcParams1.getStr("didDocument");
+                    transactionReceiptRemoteFunctionCall = businessContract2.call(contractFunc, did, didDocument);
+                } else {
+                    transactionReceiptRemoteFunctionCall = businessContract2.call(contractFunc, param);
+                }
+                TransactionReceipt transactionReceipt2 = transactionReceiptRemoteFunctionCall.send();
+
+                // 验证code
+                String ethStatus = transactionReceipt2.getStatus();
+                String ethStatusWithoutPrefix = ethStatus.toLowerCase().replaceAll("0x", "");
+                Assert.isTrue("1".equals(ethStatusWithoutPrefix), () -> new ApiException("智能合约执行失败, code: " + ethStatus));
+
+                log.info("保存成功: {}", transactionReceipt2);
+                txHashResp.setTxHash(transactionReceipt2.getTransactionHash());
+                break;
+            case BCOS_SOLIDITY:
+//                if ("saveBusinessDetails".equals(contractFunc)) {
+//                    BusinessContractSaveRequest request = new BusinessContractSaveRequest();
+//                    request.setBusinessAddress(key);
+//                    request.setDetails(param);
+//                    OpenAPIResp openAPIResp = bcosService.save(request);
+//                    log.info("保存saveBusinessDetails成功: {}", openAPIResp);
+//                    Object data = openAPIResp.getData();
+//                    if (data != null) {
+//                        JSONObject jsonObject1 = JSONUtil.parseObj(data);
+//                        map.put("txHash", jsonObject1.getStr("txHash"));
+//                    }
+//                } else {
+                BcosContractRequest bcosContractRequest = new BcosContractRequest();
+                bcosContractRequest.setContractFunc(contractFunc);
+                bcosContractRequest.setContractAddress(contractAddress);
+                // 业务合约验证链上资源
+                if ("createDID".equals(contractFunc) || "updateDID".equals(contractFunc)) {
+//                    JSONObject funcParams1 = credentialSubject.getJSONObject("func_params");
+//                    String did = funcParams1.getStr("did");
+//                    String didDocument = funcParams1.getStr("didDocument");
+                    bcosContractRequest.setFuncParams(JsonUtil.toJson(funcParams));
+                } else {
+                    bcosContractRequest.setFuncParams(param);
+                }
+                bcosContractRequest.setContractAddress(contractAddress);
+                OpenAPIResp openAPIResp = bcosService.call(bcosContractRequest);
+
+                // 判断执行结果
+                Integer code = openAPIResp.getCode();
+                Assert.isTrue(Integer.valueOf(200).equals(code), () -> new ApiException("run fail, openAPIResp: " + openAPIResp.getMsg()));
+
+                log.info("保存call成功: {}", openAPIResp);
+                Object data = openAPIResp.getData();
+                if (data != null) {
+                    JSONObject jsonObject1 = JSONUtil.parseObj(data);
+                    txHashResp.setTxHash(jsonObject1.getStr("txHash"));
+                }
+//                }
+                break;
+            case BSC_SOLIDITY:
+                // 不再使用bsc链
+                BusinessContract2 businessContract3 = bscBusinessContractService.load(contractAddress);
+                RemoteFunctionCall<TransactionReceipt> transactionReceiptRemoteFunctionCall1 = null;
+                // 业务合约验证链上资源
+                if ("createDID".equals(contractFunc) || "updateDID".equals(contractFunc)) {
+                    JSONObject funcParams1 = JSONUtil.parseObj(credentialSubject.getFuncParams());
+                    String did = funcParams1.getStr("did");
+                    String didDocument = funcParams1.getStr("didDocument");
+                    transactionReceiptRemoteFunctionCall1 = businessContract3.call(contractFunc, did, didDocument);
+                } else {
+                    transactionReceiptRemoteFunctionCall1 = businessContract3.call(contractFunc, param);
+                }
+                TransactionReceipt transactionReceipt4 = transactionReceiptRemoteFunctionCall1.send();
+                log.info("保存成功: {}", transactionReceipt4);
+                txHashResp.setTxHash(transactionReceipt4.getTransactionHash());
+                break;
+            case FABRIC_WASM:
+                FabricChainCodeInvokeReq fabricChainCodeInvokeReq = new FabricChainCodeInvokeReq();
+                fabricChainCodeInvokeReq.setChainCodeName(contractAddress);
+                fabricChainCodeInvokeReq.setFunction(contractFunc);
+                fabricChainCodeInvokeReq.setChannelId(FABRIC_CHANNEL_ID);
+                fabricChainCodeInvokeReq.setChainCodeVersion(FABRIC_CHAIN_CODE_VERSION);
+                fabricChainCodeInvokeReq.setLang(FABRIC_LANG);
+                fabricChainCodeInvokeReq.setInit(false);
+                fabricChainCodeInvokeReq.setArgs(Arrays.asList(param));
+
+                FabricChainCodeInvokeResponse response = fabricService.invoke(fabricChainCodeInvokeReq);
+                // todo hash未返回
+                txHashResp.setTxHash("");
+                break;
+            default:
+                throw new ApiException("不支持的链类型: " + contractTypeEnum);
+        }
+        return txHashResp;
+    }
+
+    public TxHashResp callVerifyFunc(String param) throws Exception {
+        VerifiableCredentialListDto request = JSONUtil.toBean(param, VerifiableCredentialListDto.class);
+        if (request.getOrigin() == null) {
+            throw new ApiException("非法参数, origin为空");
+        }
+        VerifiableCredentialDto originObject = request.getOrigin();
+        if (originObject.getCredentialSubject() == null) {
+            throw new ApiException("非法参数");
+        }
+        VerifiableCredentialDto.CredentialSubject credentialSubject = originObject.getCredentialSubject();
+        String contractType = credentialSubject.getContractType();
+        String contractAddress = credentialSubject.getContractAddress();
+        String contractFunc = "verifyVcs";
+        Object funcParams = credentialSubject.getFuncParams();
+        String paramName = credentialSubject.getParamName();
+
+        if (FABRIC_WASM.getCode().equals(contractType)) {
+            contractFunc = "VerifyVcs";
+        } else {
+            contractFunc = "verifyVcs";
+        }
+
+        ContractTypeEnum contractTypeEnum = ContractTypeEnum.getByCode(contractType);
+        TxHashResp txHashResp = new TxHashResp();
+        switch (contractTypeEnum) {
+            case CHAINMAKER_WASM:
+                BusinessContract4Wasm businessContract4Wasm = chainmakerWasmService.load(contractAddress);
+                TransactionReceipt transactionReceipt1 = null;
+                if ("createDID".equals(contractFunc) || "updateDID".equals(contractFunc)) {
+                    JSONObject funcParams1 = JSONUtil.parseObj(credentialSubject.getFuncParams());
+                    String did = funcParams1.getStr("did");
+                    String didDocument = funcParams1.getStr("didDocument");
+                    Map<String, byte[]> paramsMap = new HashMap<>();
+                    paramsMap.put("did", did.getBytes());
+                    paramsMap.put("didDoc", didDocument.getBytes());
+                    transactionReceipt1 = businessContract4Wasm.call(contractFunc, paramsMap);
+                } else {
+                    Map<String, byte[]> paramsMap = new HashMap<>();
+                    paramsMap.put(paramName, param.getBytes());
+                    transactionReceipt1 = businessContract4Wasm.call(contractFunc, paramsMap);
+                }
+                log.info("保存成功: {}", transactionReceipt1);
+                txHashResp.setTxHash(transactionReceipt1.getTransactionHash());
+                break;
+            case LINGSHU_SOLIDITY:
+                LsBusinessContract2 businessContract1 = lingshuBusinessContractService.load(contractAddress);
+                com.lingshu.chain.sdk.model.TransactionReceipt transactionReceipt = null;
+                if ("createDID".equals(contractFunc) || "updateDID".equals(contractFunc)) {
+                    JSONObject funcParams1 = JSONUtil.parseObj(credentialSubject.getFuncParams());
+                    String did = funcParams1.getStr("did");
+                    String didDocument = funcParams1.getStr("didDocument");
+                    transactionReceipt = businessContract1.call(contractFunc, did, didDocument);
+                } else {
+                    transactionReceipt = businessContract1.call(contractFunc, param);
+                }
+
+                // 验证status
+                int status = transactionReceipt.getStatus();
+                Assert.isTrue(status == 0, () -> new ApiException("交易失败，code：" + status));
+
+                log.info("保存成功: {}", transactionReceipt);
+                txHashResp.setTxHash(transactionReceipt.getTransactionHash());
+                break;
+            case ETHEREUM_SOLIDITY:
+                BusinessContract2 businessContract2 = ethereumBusinessContractService.load(contractAddress);
+                RemoteFunctionCall<TransactionReceipt> transactionReceiptRemoteFunctionCall = null;
+                if ("createDID".equals(contractFunc) || "updateDID".equals(contractFunc)) {
+                    JSONObject funcParams1 = JSONUtil.parseObj(credentialSubject.getFuncParams());
+                    String did = funcParams1.getStr("did");
+                    String didDocument = funcParams1.getStr("didDocument");
+                    transactionReceiptRemoteFunctionCall = businessContract2.call(contractFunc, did, didDocument);
+                } else {
+                    transactionReceiptRemoteFunctionCall = businessContract2.call(contractFunc, param);
+                }
+                TransactionReceipt transactionReceipt2 = transactionReceiptRemoteFunctionCall.send();
+
+                // 验证code
+                String ethStatus = transactionReceipt2.getStatus();
+                String ethStatusWithoutPrefix = ethStatus.toLowerCase().replaceAll("0x", "");
+                Assert.isTrue("1".equals(ethStatusWithoutPrefix), () -> new ApiException("智能合约执行失败, code: " + ethStatus));
+
+                log.info("保存成功: {}", transactionReceipt2);
+                txHashResp.setTxHash(transactionReceipt2.getTransactionHash());
+                break;
+            case BCOS_SOLIDITY:
+                BcosContractRequest bcosContractRequest = new BcosContractRequest();
+                bcosContractRequest.setContractFunc(contractFunc);
+                bcosContractRequest.setContractAddress(contractAddress);
+                // 业务合约验证链上资源
+                if ("createDID".equals(contractFunc) || "updateDID".equals(contractFunc)) {
+                    bcosContractRequest.setFuncParams(JsonUtil.toJson(funcParams));
+                } else {
+                    bcosContractRequest.setFuncParams(param);
+                }
+                bcosContractRequest.setContractAddress(contractAddress);
+                OpenAPIResp openAPIResp = bcosService.call(bcosContractRequest);
+
+                // 判断执行结果
+                Integer code = openAPIResp.getCode();
+                Assert.isTrue(Integer.valueOf(200).equals(code), () -> new ApiException("run fail, openAPIResp: " + openAPIResp.getMsg()));
+
+                log.info("保存call成功: {}", openAPIResp);
+                Object data = openAPIResp.getData();
+                if (data != null) {
+                    JSONObject jsonObject1 = JSONUtil.parseObj(data);
+                    txHashResp.setTxHash(jsonObject1.getStr("txHash"));
+                }
+                break;
+            case BSC_SOLIDITY:
+                // 不再使用bsc链
+                BusinessContract2 businessContract3 = bscBusinessContractService.load(contractAddress);
+                RemoteFunctionCall<TransactionReceipt> transactionReceiptRemoteFunctionCall1 = null;
+                // 业务合约验证链上资源
+                if ("createDID".equals(contractFunc) || "updateDID".equals(contractFunc)) {
+                    JSONObject funcParams1 = JSONUtil.parseObj(credentialSubject.getFuncParams());
+                    String did = funcParams1.getStr("did");
+                    String didDocument = funcParams1.getStr("didDocument");
+                    transactionReceiptRemoteFunctionCall1 = businessContract3.call(contractFunc, did, didDocument);
+                } else {
+                    transactionReceiptRemoteFunctionCall1 = businessContract3.call(contractFunc, param);
+                }
+                TransactionReceipt transactionReceipt4 = transactionReceiptRemoteFunctionCall1.send();
+                log.info("保存成功: {}", transactionReceipt4);
+                txHashResp.setTxHash(transactionReceipt4.getTransactionHash());
+                break;
+            case FABRIC_WASM:
+                FabricChainCodeInvokeReq fabricChainCodeInvokeReq = new FabricChainCodeInvokeReq();
+                fabricChainCodeInvokeReq.setChainCodeName(contractAddress);
+                fabricChainCodeInvokeReq.setFunction(contractFunc);
+                fabricChainCodeInvokeReq.setChannelId(FABRIC_CHANNEL_ID);
+                fabricChainCodeInvokeReq.setChainCodeVersion(FABRIC_CHAIN_CODE_VERSION);
+                fabricChainCodeInvokeReq.setLang(FABRIC_LANG);
+                fabricChainCodeInvokeReq.setInit(false);
+                fabricChainCodeInvokeReq.setArgs(Arrays.asList(param));
+
+                FabricChainCodeInvokeResponse response = fabricService.invoke(fabricChainCodeInvokeReq);
+                // todo hash未返回
+                txHashResp.setTxHash("");
+                break;
+            default:
+                throw new ApiException("不支持的链类型: " + contractTypeEnum);
+        }
+        return txHashResp;
+    }
+
+    public String vcSignView(CrossChainRequest request) throws Exception {
+        String paramsStr = businessService.genCrossChainVcListStr(request);
+        return paramsStr;
+    }
+
+    public String get(String param) throws Exception {
+        JSONObject jsonObject = JSONUtil.parseObj(param);
+        if (!jsonObject.containsKey("origin")) {
+            throw new ApiException("非法参数");
+        }
+        JSONObject originObject = jsonObject.getJSONObject("origin");
+        if (!originObject.containsKey("credentialSubject")) {
+            throw new ApiException("非法参数");
+        }
+        JSONObject credentialSubject = originObject.getJSONObject("credentialSubject");
+        String resourceName = credentialSubject.getStr("resource_name");
+        String gatewayId = credentialSubject.getStr("gateway_id");
+        String chainRid = credentialSubject.getStr("chain_rid");
+        String contractType = credentialSubject.getStr("contract_type");
+        String contractAddress = credentialSubject.getStr("contract_address");
+        String contractFunc = credentialSubject.getStr("contract_func");
+        String funcParams = credentialSubject.getStr("func_params");
+        String key = credentialSubject.getStr("key");
+        String paramName = credentialSubject.getStr("param_name");
+
+        ContractTypeEnum contractTypeEnum = ContractTypeEnum.getByCode(contractType);
+//        Map<String, Object> map = new HashMap<>();
+        String result = null;
+        switch (contractTypeEnum) {
+//            case CHAINMAKER_SOLIDITY:
+//                BusinessContract businessContract = chainmakerSolidityService.load(contractAddress);
+////                TransactionReceipt erc20GetBalance = businessContract.call("erc20GetBalance",
+////                        "0xe9f5d5ea58ed76c0780564ad3d5fae3a524e1111");
+//                TransactionReceipt transactionReceipt = businessContract.call(contractFunc, param);
+//                log.info("保存成功: {}", transactionReceipt);
+//                map.put("txHash", transactionReceipt.getTransactionHash());
+////                String businessDetails = businessContract.getBusinessDetails(key);
+//                //log.info("查询成功: {}", businessDetails);
+//                break;
+            case CHAINMAKER_WASM:
+                BusinessContract4Wasm businessContract4Wasm = chainmakerWasmService.load(contractAddress);
+                Map<String, byte[]> paramsMap = new HashMap<>();
+                if ("useFuncParams".equals(key)) {
+                    paramsMap.put(paramName, funcParams.getBytes());
+                } else {
+                    paramsMap.put(paramName, param.getBytes());
+                }
+                result = businessContract4Wasm.get(contractFunc, paramsMap);
+                log.info("查询成功: {}", result);
+                break;
+            case LINGSHU_SOLIDITY:
+                LsBusinessContract2 businessContract1 = lingshuBusinessContractService.load(contractAddress);
+                if ("useFuncParams".equals(key)) {
+                    result = businessContract1.get(contractFunc, funcParams);
+                } else {
+                    com.lingshu.chain.sdk.model.TransactionReceipt txResult = businessContract1.getResult(contractFunc, param);
+                    String outputHex = txResult.getOutput();
+                    result = EthDecoderUtil.decodeOneString(outputHex, false);
+                }
+                log.info("查询成功: {}", result);
+                break;
+            case ETHEREUM_SOLIDITY:
+                BusinessContract2 businessContract2 = ethereumBusinessContractService.load(contractAddress);
+                if ("useFuncParams".equals(key)) {
+                    result = businessContract2.get(contractFunc, funcParams);
+                } else {
+                    result = businessContract2.get(contractFunc, param);
+                }
+                log.info("查询成功: {}", result);
+                break;
+            case BCOS_SOLIDITY:
+
+                BcosContractRequest request = new BcosContractRequest();
+                request.setContractFunc(contractFunc);
+                request.setContractAddress(contractAddress);
+                if ("useFuncParams".equals(key)) {
+                    request.setFuncParams(funcParams);
+                } else {
+                    request.setFuncParams(param);
+                }
+//                String binary = Files.readString(new File(""));
+//                log.info("binary: {}", binary);
+                //request.setBinary("608060405234801561001057600080fd5b5060405160208062005cf383398101806040528101908080519060200190929190505050806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050615c6e80620000856000396000f300608060405260043610610154576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632a9c9044146101595780632e8f09651461020c57806332449b8d146103345780633c2beb0b1461045c5780633d160503146104c55780634585f30d146105f757806359f686aa146106d95780636a2ce56b146107cf5780636c7f15421461084c57806377c682181461089157806378ba8bb8146109045780638b6bb00f1461096d5780638ce712b2146109f25780638f4996ec14610a5b578063a04b276914610b3d578063a1c0d91c14610bc2578063a282a89914610ca4578063a4fdd42314610d03578063a849134d14610e2b578063aa6fdc8314610ede578063b1afcf8b14610f63578063b247b13014611045578063d9bc406a146110ae578063e939567914611132578063e9cb4e6d146111d8578063f15da729146111ef575b600080fd5b34801561016557600080fd5b506101f6600480360381019080803590602001908201803590602001908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050919291929080357effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191690602001909291908035906020019092919050505061122a565b6040518082815260200191505060405180910390f35b34801561021857600080fd5b506102b9600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290803590602001908201803590602001908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050919291929050505061130a565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156102f95780820151818401526020810190506102de565b50505050905090810190601f1680156103265780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561034057600080fd5b506103e1600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290803590602001908201803590602001908080601f01602080910402602001604051908101604052809392919081815260200183838082843782019150505050505091929192905050506113f6565b6040518080602001828103825283818151815260200191508051906020019080838360005b83811015610421578082015181840152602081019050610406565b50505050905090810190601f16801561044e5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561046857600080fd5b506104c3600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050611670565b005b3480156104d157600080fd5b5061057c600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290803590602001908201803590602001908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050919291929080359060200190929190505050611c54565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156105bc5780820151818401526020810190506105a1565b50505050905090810190601f1680156105e95780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561060357600080fd5b5061065e600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050611ea3565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561069e578082015181840152602081019050610683565b50505050905090810190601f1680156106cb5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b3480156106e557600080fd5b50610754600480360381019080803590602001908201803590602001908080601f01602080910402602001604051908101604052809392919081815260200183838082843782019150505050505091929192908035906020019092919080359060200190929190505050611f6c565b6040518080602001828103825283818151815260200191508051906020019080838360005b83811015610794578082015181840152602081019050610779565b50505050905090810190601f1680156107c15780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b3480156107db57600080fd5b50610836600480360381019080803590602001908201803590602001908080601f01602080910402602001604051908101604052809392919081815260200183838082843782019150505050505091929192905050506122ce565b6040518082815260200191505060405180910390f35b34801561085857600080fd5b5061087b60048036038101908080356000191690602001909291905050506123c2565b6040518082815260200191505060405180910390f35b34801561089d57600080fd5b50610902600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290803590602001909291905050506123da565b005b34801561091057600080fd5b5061096b600480360381019080803590602001908201803590602001908080601f01602080910402602001604051908101604052809392919081815260200183838082843782019150505050505091929192905050506124c7565b005b34801561097957600080fd5b506109d4600480360381019080803590602001908201803590602001908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050919291929050505061264d565b60405180826000191660001916815260200191505060405180910390f35b3480156109fe57600080fd5b50610a59600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050612869565b005b348015610a6757600080fd5b50610ac2600480360381019080803590602001908201803590602001908080601f01602080910402602001604051908101604052809392919081815260200183838082843782019150505050505091929192905050506128b9565b6040518080602001828103825283818151815260200191508051906020019080838360005b83811015610b02578082015181840152602081019050610ae7565b50505050905090810190601f168015610b2f5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b348015610b4957600080fd5b50610ba4600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050612956565b60405180826000191660001916815260200191505060405180910390f35b348015610bce57600080fd5b50610c29600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050612abf565b6040518080602001828103825283818151815260200191508051906020019080838360005b83811015610c69578082015181840152602081019050610c4e565b50505050905090810190601f168015610c965780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b348015610cb057600080fd5b50610ce5600480360381019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050612cf4565b60405180826000191660001916815260200191505060405180910390f35b348015610d0f57600080fd5b50610db0600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050612d3b565b6040518080602001828103825283818151815260200191508051906020019080838360005b83811015610df0578082015181840152602081019050610dd5565b50505050905090810190601f168015610e1d5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b348015610e3757600080fd5b50610ec8600480360381019080803590602001908201803590602001908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050919291929080357effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916906020019092919080359060200190929190505050612f99565b6040518082815260200191505060405180910390f35b348015610eea57600080fd5b50610f45600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050613095565b60405180826000191660001916815260200191505060405180910390f35b348015610f6f57600080fd5b50610fca600480360381019080803590602001908201803590602001908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050919291929050505061316d565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561100a578082015181840152602081019050610fef565b50505050905090810190601f1680156110375780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561105157600080fd5b506110ac600480360381019080803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050613309565b005b3480156110ba57600080fd5b50611115600480360381019080803590602001908201803590602001908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050919291929050505061344a565b604051808381526020018281526020019250505060405180910390f35b34801561113e57600080fd5b5061115d6004803603810190808035906020019092919050505061355b565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561119d578082015181840152602081019050611182565b50505050905090810190601f1680156111ca5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b3480156111e457600080fd5b506111ed6136b5565b005b3480156111fb57600080fd5b5061122860048036038101908080359060200190820180359060200191909192939192939050505061373b565b005b60006060600080869250600091508490505b82518110156112fd57857effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916838281518110151561127657fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191614156112f0576001820191505b808060010191505061123c565b8193505050509392505050565b60606000606060008061131b615b74565b6060611325615b74565b60606113328b60c8613790565b809850819950829a50505050600094505b86518510156113d457868581518110151561135a57fe5b9060200190602002015193506113798b8560200151866060015161455a565b92506000611387848c61465b565b14156113c757866001860181518110151561139e57fe5b9060200190602002015191506113bd8b8360200151846060015161455a565b90508098506113e8565b8480600101955050611343565b602060405190810160405280600081525098505b505050505050505092915050565b606060006060806000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1692508273ffffffffffffffffffffffffffffffffffffffff1663a3a7c60b876040518263ffffffff167c01000000000000000000000000000000000000000000000000000000000281526004018080602001828103825283818151815260200191508051906020019080838360005b838110156114a957808201518184015260208101905061148e565b50505050905090810190601f1680156114d65780820380516001836020036101000a031916815260200191505b5092505050600060405180830381600087803b1580156114f557600080fd5b505af1158015611509573d6000803e3d6000fd5b505050506040513d6000823e3d601f19601f82011682018060405250602081101561153357600080fd5b81019080805164010000000081111561154b57600080fd5b8281019050602081018481111561156157600080fd5b815185600182028301116401000000008211171561157e57600080fd5b5050929190505050915060006115a483602060405190810160405280600081525061465b565b1415151561161a576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260118152602001807f64696420646f63206e6f7420666f756e7400000000000000000000000000000081525060200191505060405180910390fd5b611659826040805190810160405280601281526020017f766572696669636174696f6e4d6574686f64000000000000000000000000000081525061130a565b90506116658186612d3b565b935050505092915050565b60608060608060008060008060606000806000606060006116c68f6040805190810160405280600581526020017f70726f6f6600000000000000000000000000000000000000000000000000000081525061130a565b9d506117078e6040805190810160405280600b81526020017f636f6e74656e744861736800000000000000000000000000000000000000000081525061130a565b9c506117488e6040805190810160405280600181526020017f730000000000000000000000000000000000000000000000000000000000000081525061130a565b9b506117898e6040805190810160405280600181526020017f760000000000000000000000000000000000000000000000000000000000000081525061130a565b9a506117948d61264d565b99506117dd6117d88f6040805190810160405280600181526020017f720000000000000000000000000000000000000000000000000000000000000081525061130a565b61264d565b98506117e88c61264d565b97506117f38b614912565b96506117fe8e6128b9565b955060018a888b8b604051600081526020016040526040518085600019166000191681526020018460ff1660ff1681526020018360001916600019168152602001826000191660001916815260200194505050505060206040516020810390808403906000865af1158015611877573d6000803e3d6000fd5b5050506020604051035194508473ffffffffffffffffffffffffffffffffffffffff16600102600019166118aa8761264d565b60001916148d878760405160200180807f61646472657373206e6f7420747275652c636f6e74656e74486173682c000000815250601d0184805190602001908083835b60208310151561191257805182526020820191506020810190506020830392506118ed565b6001836020036101000a038019825116818451168082178552505050505050905001807f2c20766572696679416464726573730000000000000000000000000000000000815250600f0183805190602001908083835b60208310151561198d5780518252602082019150602081019050602083039250611968565b6001836020036101000a038019825116818451168082178552505050505050905001807f2c2063616c416464726573730000000000000000000000000000000000000000815250600c018273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166c010000000000000000000000000281526014019350505050604051602081830303815290604052901515611ad4576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825283818151815260200191508051906020019080838360005b83811015611a99578082015181840152602081019050611a7e565b50505050905090810190601f168015611ac65780820380516001836020036101000a031916815260200191505b509250505060405180910390fd5b50611ade8f61344a565b93509350611aed8f8585611f6c565b9150611af882612956565b905089600019168160001916148260405160200180807f76632068617368206e6f7420657175616c2c000000000000000000000000000081525060120182805190602001908083835b602083101515611b665780518252602082019150602081019050602083039250611b41565b6001836020036101000a038019825116818451168082178552505050505050905001915050604051602081830303815290604052901515611c42576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825283818151815260200191508051906020019080838360005b83811015611c07578082015181840152602081019050611bec565b50505050905090810190601f168015611c345780820380516001836020036101000a031916815260200191505b509250505060405180910390fd5b50505050505050505050505050505050565b60608160016000611c6487613095565b600019166000191681526020019081526020016000205410151515611cf1576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260048152602001807f6e6f74200000000000000000000000000000000000000000000000000000000081525060200191505060405180910390fd5b8160016000611cff87613095565b60001916600019168152602001908152602001600020600082825403925050819055508160016000611d3086613095565b60001916600019168152602001908152602001600020600082825401925050819055507fa0b1ffbc8b2c4c04f821bbc137802807b3f9c65238daa32d43116e9fb32a7948848484604051808060200180602001848152602001838103835286818151815260200191508051906020019080838360005b83811015611dc1578082015181840152602081019050611da6565b50505050905090810190601f168015611dee5780820380516001836020036101000a031916815260200191505b50838103825285818151815260200191508051906020019080838360005b83811015611e27578082015181840152602081019050611e0c565b50505050905090810190601f168015611e545780820380516001836020036101000a031916815260200191505b509550505050505060405180910390a16040805190810160405280600481526020017f747275650000000000000000000000000000000000000000000000000000000081525090509392505050565b606080611ee5836040805190810160405280600681526020017f6f726967696e000000000000000000000000000000000000000000000000000081525061130a565b90506000611f0382602060405190810160405280600081525061465b565b141515611f1857611f1381611670565b611f63565b611f57836040805190810160405280600681526020017f746172676574000000000000000000000000000000000000000000000000000081525061130a565b9050611f6281611670565b5b80915050919050565b606080600060606000806000899550855189101515611ff3576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260198152602001807f537461727420696e646578206f7574206f6620626f756e64730000000000000081525060200191505060405180910390fd5b8551881115151561206c576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260178152602001807f456e6420696e646578206f7574206f6620626f756e647300000000000000000081525060200191505060405180910390fd5b87891115151561210a576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260338152602001807f537461727420696e646578206d757374206265206c657373207468616e206f7281526020017f20657175616c20746f20656e6420696e6465780000000000000000000000000081525060400191505060405180910390fd5b8888038651039450846040519080825280601f01601f1916602001820160405280156121455781602001602082028038833980820191505090505b50935060009250600091505b8882101561220557858281518110151561216757fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f01000000000000000000000000000000000000000000000000000000000000000284848151811015156121c057fe5b9060200101907effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916908160001a90535082806001019350508180600101925050612151565b8790505b85518110156122be57858181518110151561222057fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f010000000000000000000000000000000000000000000000000000000000000002848481518110151561227957fe5b9060200101907effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916908160001a90535082806001019350508080600101915050612209565b8396505050505050509392505050565b60007ff3d39f15c009ad599c03bbc459984a05ea8f344958338cf5496ae28e5ff17eaa61231d6001600061230186613095565b6000191660001916815260200190815260200160002054614926565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561235d578082015181840152602081019050612342565b50505050905090810190601f16801561238a5780820380516001836020036101000a031916815260200191505b509250505060405180910390a1600160006123a484613095565b60001916600019168152602001908152602001600020549050919050565b60016020528060005260406000206000915090505481565b80600160006123e885613095565b60001916600019168152602001908152602001600020600082825401925050819055507fa0b1ffbc8b2c4c04f821bbc137802807b3f9c65238daa32d43116e9fb32a79488282604051808060200180602001848152602001838103835260008152602001602001838103825285818151815260200191508051906020019080838360005b8381101561248757808201518184015260208101905061246c565b50505050905090810190601f1680156124b45780820380516001836020036101000a031916815260200191505b5094505050505060405180910390a15050565b60608060608060608060006124db88611ea3565b965061251c876040805190810160405280601181526020017f63726564656e7469616c5375626a65637400000000000000000000000000000081525061130a565b955061255d866040805190810160405280600b81526020017f66756e635f706172616d7300000000000000000000000000000000000000000081525061130a565b945061259e856040805190810160405280600481526020017f66726f6d0000000000000000000000000000000000000000000000000000000081525061130a565b93506125df856040805190810160405280600281526020017f746f00000000000000000000000000000000000000000000000000000000000081525061130a565b9250612620856040805190810160405280600681526020017f616d6f756e74000000000000000000000000000000000000000000000000000081525061130a565b915061262b82614912565b9050612638848483611c54565b5061264288612abf565b505050505050505050565b60006060600080600080600080604289511415612680576126796126748a6002604261455a565b61264d565b975061285d565b604089511415156126f9576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260198152602001807f496e76616c69642068657820737472696e67206c656e6774680000000000000081525060200191505060405180910390fd5b88965086519550600093505b8584101561285957868481518110151561271b57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027f010000000000000000000000000000000000000000000000000000000000000090049250866001850181518110151561279c57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027f01000000000000000000000000000000000000000000000000000000000000009004915061281582614a7d565b600461282085614a7d565b60ff169060020a02179050600860028581151561283957fe5b040260f8038160ff169060020a0260010285179450600284019350612705565b8497505b50505050505050919050565b60606128aa826040805190810160405280600681526020017f6f726967696e000000000000000000000000000000000000000000000000000081525061130a565b90506128b581611670565b5050565b6060806000606080612900866040805190810160405280601281526020017f766572696669636174696f6e4d6574686f64000000000000000000000000000081525061130a565b935061292e847f23000000000000000000000000000000000000000000000000000000000000006000612f99565b925061293c8460008561455a565b915061294882856113f6565b905080945050505050919050565b6000806060835191506129688261355b565b9050808460405160200180807f19457468657265756d205369676e6564204d6573736167653a0a000000000000815250601a0183805190602001908083835b6020831015156129cc57805182526020820191506020810190506020830392506129a7565b6001836020036101000a03801982511681845116808217855250505050505090500182805190602001908083835b602083101515612a1f57805182526020820191506020810190506020830392506129fa565b6001836020036101000a038019825116818451168082178552505050505050905001925050506040516020818303038152906040526040518082805190602001908083835b602083101515612a895780518252602082019150602081019050602083039250612a64565b6001836020036101000a038019825116818451168082178552505050505050905001915050604051809103902092505050919050565b606080606080612b04856040805190810160405280600681526020017f6f726967696e000000000000000000000000000000000000000000000000000081525061130a565b9250612b45856040805190810160405280600681526020017f746172676574000000000000000000000000000000000000000000000000000081525061130a565b91506000612b6384602060405190810160405280600081525061465b565b14158015612b8b57506000612b8883602060405190810160405280600081525061465b565b14155b15612cec578160405160200180807f7b22746172676574223a00000000000000000000000000000000000000000000815250600a0182805190602001908083835b602083101515612bf15780518252602082019150602081019050602083039250612bcc565b6001836020036101000a038019825116818451168082178552505050505050905001807f7d0000000000000000000000000000000000000000000000000000000000000081525060010191505060405160208183030381529060405290507f38a465f8730268ab3b88e7551b94e6dd2c52422a9ff358c93527c383ef9ae85c816040518080602001828103825283818151815260200191508051906020019080838360005b83811015612cb1578082015181840152602081019050612c96565b50505050905090810190601f168015612cde5780820380516001836020036101000a031916815260200191505b509250505060405180910390a15b505050919050565b6000816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550919050565b6060600080600080600080612d4e615bbd565b606080612d7d8c7f7b00000000000000000000000000000000000000000000000000000000000000600061122a565b98506000975060009650600095505b88861015612f7657612dbf8c7f7b0000000000000000000000000000000000000000000000000000000000000089612f99565b9450612dec8c7f7d0000000000000000000000000000000000000000000000000000000000000089612f99565b9350600085138015612dfe5750600084135b15612f69576040805190810160405280868152602001858152509250612e258c868661455a565b9150612e66826040805190810160405280600281526020017f696400000000000000000000000000000000000000000000000000000000000081525061130a565b90507ff3d39f15c009ad599c03bbc459984a05ea8f344958338cf5496ae28e5ff17eaa816040518080602001828103825283818151815260200191508051906020019080838360005b83811015612eca578082015181840152602081019050612eaf565b50505050905090810190601f168015612ef75780820380516001836020036101000a031916815260200191505b509250505060405180910390a16000612f10828d61465b565b1415612f5c57612f55826040805190810160405280600781526020017f616464726573730000000000000000000000000000000000000000000000000081525061130a565b9950612f8a565b6001880197506001840196505b8580600101965050612d8c565b602060405190810160405280600081525099505b50505050505050505092915050565b6000606060008591508390505b815181101561306857847effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19168282815181101515612fe057fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916141561305b5780925061308c565b8080600101915050612fa6565b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff92505b50509392505050565b6000816040516020018082805190602001908083835b6020831015156130d057805182526020820191506020810190506020830392506130ab565b6001836020036101000a0380198251168184511680821785525050505050509050019150506040516020818303038152906040526040518082805190602001908083835b6020831015156131395780518252602082019150602081019050602083039250613114565b6001836020036101000a03801982511681845116808217855250505050505090500191505060405180910390209050919050565b6060806060806060600061318087611ea3565b94506131c1856040805190810160405280601181526020017f63726564656e7469616c5375626a65637400000000000000000000000000000081525061130a565b9350613202846040805190810160405280600b81526020017f66756e635f706172616d7300000000000000000000000000000000000000000081525061130a565b9250613243836040805190810160405280600781526020017f6163636f756e740000000000000000000000000000000000000000000000000081525061130a565b915061324e826122ce565b90507ff3d39f15c009ad599c03bbc459984a05ea8f344958338cf5496ae28e5ff17eaa61327a82614926565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156132ba57808201518184015260208101905061329f565b50505050905090810190601f1680156132e75780820380516001836020036101000a031916815260200191505b509250505060405180910390a16132fd81614926565b95505050505050919050565b6060806060806060600061331c87611ea3565b955061335d866040805190810160405280601181526020017f63726564656e7469616c5375626a65637400000000000000000000000000000081525061130a565b945061339e856040805190810160405280600b81526020017f66756e635f706172616d7300000000000000000000000000000000000000000081525061130a565b93506133df846040805190810160405280600281526020017f746f00000000000000000000000000000000000000000000000000000000000081525061130a565b9250613420846040805190810160405280600681526020017f616d6f756e74000000000000000000000000000000000000000000000000000081525061130a565b915061342b82614912565b905061343783826123da565b61344087612abf565b5050505050505050565b6000806000606060008061345c615b74565b6060613466615b74565b6134718a60c8613790565b809750819850829950505050600093505b855184101561354157858481518110151561349957fe5b9060200190602002015192506134b88a8460200151856060015161455a565b915060006134fb836040805190810160405280600581526020017f70726f6f6600000000000000000000000000000000000000000000000000000081525061465b565b141561353457856001850181518110151561351257fe5b906020019060200201519050600283602001510381606001519850985061354f565b8380600101945050613482565b600080819150809050985098505b50505050505050915091565b606060008060606000808614156135a9576040805190810160405280600181526020017f300000000000000000000000000000000000000000000000000000000000000081525094506136ac565b8593505b6000841415156135d3578280600101935050600a848115156135cb57fe5b0493506135ad565b826040519080825280601f01601f1916602001820160405280156136065781602001602082028038833980820191505090505b5091506001830390508593505b6000841415156136a857600a8481151561362957fe5b066030017f01000000000000000000000000000000000000000000000000000000000000000282828060019003935081518110151561366457fe5b9060200101907effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916908160001a905350600a848115156136a057fe5b049350613613565b8194505b50505050919050565b7f9b83da9b4ae23e896f70e038915a37560445188045df2b1a3db1b1a310cdc3996000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff16604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390a1565b7ff3d39f15c009ad599c03bbc459984a05ea8f344958338cf5496ae28e5ff17eaa8282604051808060200182810382528484828181526020019250808284378201915050935050505060405180910390a15050565b600060606000606060006137a2615bd7565b60008060006137af615b74565b60008060008e99506137c08e614b6a565b809d508199505050876020015195505b89518860000151101561453a578988600001518151811015156137ef57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000029250607b7f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191614806138d35750605b7f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b15613a175785806001019650506138ea888d614c07565b809550819a50505088151561390c5760038c60008090509c509c509c50614549565b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff886040015114151561396b578b886040015181518110151561394b57fe5b9060200190602002015160a001805180919060010160ff1660ff16815250505b607b7f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916146139be5760026139c1565b60015b846000019060048111156139d157fe5b908160048111156139de57fe5b81525050876000015184602001818152505060018460400190151590811515815250506001886020015103886040018181525050614525565b607d7f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19161480613aae5750605d7f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b15613cee57607d7f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191614613b06576002613b09565b60015b915060009050600188602001510394505b600085101515613c1d578b85815181101515613b3257fe5b90602001906020020151935083604001518015613b5157508360800151155b15613c0f57816004811115613b6257fe5b84600001516004811115613b7257fe5b141515613b8c5760018c60008090509c509c509c50614549565b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff88604001818152505060018860000151018c86815181101515613bcc57fe5b90602001906020020151606001818152505060018c86815181101515613bee57fe5b90602001906020020151608001901515908115158152505060019050613c1d565b848060019003955050613b1a565b801515613c375760018c60008090509c509c509c50614549565b5b6000851115613c90578b85815181101515613c4f57fe5b90602001906020020151935083604001518015613c6e57508360800151155b15613c825784886040018181525050613c90565b848060019003955050613c38565b6000851415613ce9578b85815181101515613ca757fe5b90602001906020020151935083604001518015613cc657508360800151155b15613ce857846fffffffffffffffffffffffffffffffff168860400181815250505b5b614525565b7f2200000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19161415613dcd57613d43888d8c614cd9565b9650600087141515613d6157868c60008090509c509c509c50614549565b85806001019650507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8860400151141515613dc8578b8860400151815181101515613da857fe5b9060200190602002015160a001805180919060010160ff1660ff16815250505b614525565b7f2000000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19161480613e61575060117f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b80613eb0575060127f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b80613eff575060147f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b15613f0957614525565b7f3a00000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19161415613f69576001886020015103886040018181525050614525565b7f2c00000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19161415614159577fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff88604001511415801561401d575060026004811115613fef57fe5b8c896040015181518110151561400157fe5b9060200190602002015160000151600481111561401a57fe5b14155b801561405f57506001600481111561403157fe5b8c896040015181518110151561404357fe5b9060200190602002015160000151600481111561405c57fe5b14155b1561415457600188602001510394505b600085101515614153576002600481111561408657fe5b8c8681518110151561409457fe5b906020019060200201516000015160048111156140ad57fe5b14806140ea5750600160048111156140c157fe5b8c868151811015156140cf57fe5b906020019060200201516000015160048111156140e857fe5b145b15614145578b858151811015156140fd57fe5b9060200190602002015160400151801561413057508b8581518110151561412057fe5b9060200190602002015160800151155b156141445784886040018181525050614153565b5b84806001900395505061406f565b5b614525565b7f3000000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916101580156141ed57507f3900000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191611155b8061423957507f2d00000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b8061428557507f6600000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b806142d157507f7400000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b8061431d57507f6e00000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b15614472577fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff88604001511415156143dd578b886040015181518110151561436157fe5b9060200190602002015193506001600481111561437a57fe5b8460000151600481111561438a57fe5b14806143c457506003600481111561439e57fe5b846000015160048111156143ae57fe5b1480156143c3575060008460a0015160ff1614155b5b156143dc5760018c60008090509c509c509c50614549565b5b6143e8888d8c6153d7565b965060008714151561440657868c60008090509c509c509c50614549565b85806001019650507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff886040015114151561446d578b886040015181518110151561444d57fe5b9060200190602002015160a001805180919060010160ff1660ff16815250505b614525565b60207f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19161015801561450c5750607e7f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191611155b156145245760018c60008090509c509c509c50614549565b5b876000018051809190600101815250506137d0565b60008c89602001519c509c509c505b505050505050505050509250925092565b606080606060008692508585036040519080825280601f01601f1916602001820160405280156145995781602001602082028038833980820191505090505b5091508590505b8481101561464e5782818151811015156145b657fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000028287830381518110151561461157fe5b9060200101907effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916908160001a90535080806001019150506145a0565b8193505050509392505050565b600060608060008086935085925083519150818351101561467b57825191505b600090505b818110156148be57828181518110151561469657fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916848281518110151561471157fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191610156147ac577fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9450614908565b82818151811015156147ba57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916848281518110151561483557fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191611156148b15760019450614908565b8080600101915050614680565b8251845110156148f0577fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9450614908565b8251845111156149035760019450614908565b600094505b5050505092915050565b600061491f826000615781565b9050919050565b60606000806060600080861415614974576040805190810160405280600181526020017f30000000000000000000000000000000000000000000000000000000000000008152509450614a74565b8593505b60008414151561499e578280600101935050600a8481151561499657fe5b049350614978565b826040519080825280601f01601f1916602001820160405280156149d15781602001602082028038833980820191505090505b5091506001830390505b600086141515614a7057600a868115156149f157fe5b066030017f010000000000000000000000000000000000000000000000000000000000000002828280600190039350815181101515614a2c57fe5b9060200101907effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916908160001a905350600a86811515614a6857fe5b0495506149db565b8194505b50505050919050565b600060308260ff1610158015614a97575060398260ff1611155b15614aa757603082039050614b65565b60418260ff1610158015614abf575060468260ff1611155b15614acf57603782039050614b65565b60618260ff1610158015614ae7575060668260ff1611155b15614af757605782039050614b65565b6040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260158152602001807f496e76616c69642068657820636861726163746572000000000000000000000081525060200191505060405180910390fd5b919050565b614b72615bd7565b6060614b7c615bd7565b6060806040519081016040528060008152602001600081526020017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff815250915084604051908082528060200260200182016040528015614bf757816020015b614be4615bf9565b815260200190600190039081614bdc5790505b5090508181935093505050915091565b6000614c11615b74565b614c19615b74565b83518560200151101515614c51576000846001865103815181101515614c3b57fe5b9060200190602002015180905092509250614cd1565b60c06040519081016040528060006004811115614c6a57fe5b81526020016000815260200160001515815260200160008152602001600015158152602001600060ff16815250905080848660200151815181101515614cac57fe5b9060200190602002018190525084602001805180919060010181525050600181925092505b509250929050565b6000806000614ce6615b74565b600087600001519350876000018051809190600101815250505b8551886000015110156153bd57858860000151815181101515614d1f57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f01000000000000000000000000000000000000000000000000000000000000000290507f2200000000000000000000000000000000000000000000000000000000000000817effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19161415614dff57614dc08888614c07565b8093508194505050821515614de25783886000018181525050600394506153cc565b614df6826003600187018b60000151615b03565b600094506153cc565b605c817f0100000000000000000000000000000000000000000000000000000000000000900460ff16148015614e3c575085516001896000015101105b156153a757876000018051809190600101815250507f2200000000000000000000000000000000000000000000000000000000000000868960000151815181101515614e8457fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19161480614f9a57507f2f00000000000000000000000000000000000000000000000000000000000000868960000151815181101515614f2b57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b8061504257507f5c00000000000000000000000000000000000000000000000000000000000000868960000151815181101515614fd357fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b806150ea57507f660000000000000000000000000000000000000000000000000000000000000086896000015181518110151561507b57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b8061519257507f720000000000000000000000000000000000000000000000000000000000000086896000015181518110151561512357fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b8061523a57507f6e000000000000000000000000000000000000000000000000000000000000008689600001518151811015156151cb57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b806152e257507f620000000000000000000000000000000000000000000000000000000000000086896000015181518110151561527357fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b8061538a57507f740000000000000000000000000000000000000000000000000000000000000086896000015181518110151561531b57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b15615394576153a8565b83886000018181525050600194506153cc565b5b87600001805180919060010181525050614d00565b83886000018181525050600294505b505050509392505050565b60008060008060006153e7615b74565b60009450886000015193505b8651896000015110156157085786896000015181518110151561541257fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f01000000000000000000000000000000000000000000000000000000000000000292507f2000000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191614806154f057507f0900000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b8061553c57507f0a00000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b8061558857507f0d00000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b806155d457507f2c00000000000000000000000000000000000000000000000000000000000000837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b806156235750607d7f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b806156725750605d7f010000000000000000000000000000000000000000000000000000000000000002837effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b156156805760019450615708565b6020837f0100000000000000000000000000000000000000000000000000000000000000900460ff1610806156db5750607f837f0100000000000000000000000000000000000000000000000000000000000000900460ff16115b156156f3578389600001818152505060019550615775565b886000018051809190600101815250506153f3565b841515615722578389600001818152505060029550615775565b61572c8989614c07565b809250819350505081151561574e578389600001818152505060039550615775565b61575f816004868c60000151615b03565b8860000180518091906001900381525050600095505b50505050509392505050565b60006060600080600080879450600093506000925060009150600090505b8451811015615ab75760008114801561585157507f2d0000000000000000000000000000000000000000000000000000000000000085828151811015156157e257fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916145b1561585b57600191505b6030858281518110151561586b57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027f0100000000000000000000000000000000000000000000000000000000000000900460ff16101580156159695750603985828151811015156158f557fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027f0100000000000000000000000000000000000000000000000000000000000000900460ff1611155b15615a1d57821561598c57600087141561598257615ab7565b8680600190039750505b600a84029350603085828151811015156159a257fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027f010000000000000000000000000000000000000000000000000000000000000090040360ff1684019350615aaa565b602e8582815181101515615a2d57fe5b9060200101517f010000000000000000000000000000000000000000000000000000000000000090047f0100000000000000000000000000000000000000000000000000000000000000027f0100000000000000000000000000000000000000000000000000000000000000900460ff161415615aa957600192505b5b808060010191505061579f565b6000871115615ac95786600a0a840293505b8115615af5577fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff840293505b839550505050505092915050565b8284600001906004811115615b1457fe5b90816004811115615b2157fe5b8152505081846020018181525050600184604001901515908115158152505080846060018181525050600184608001901515908115158152505060008460a0019060ff16908160ff168152505050505050565b60c06040519081016040528060006004811115615b8d57fe5b81526020016000815260200160001515815260200160008152602001600015158152602001600060ff1681525090565b604080519081016040528060008152602001600081525090565b6060604051908101604052806000815260200160008152602001600081525090565b60c06040519081016040528060006004811115615c1257fe5b81526020016000815260200160001515815260200160008152602001600015158152602001600060ff16815250905600a165627a7a723058206412d5e1c8eaf69a80527aab53f005979f465c46ae9aa829a634a2374e9938df0029");
+                OpenAPIResp openAPIResp = bcosService.get(request);
+                log.info("保存get成功: {}", openAPIResp);
+                Object data = openAPIResp.getData();
+                if (data != null) {
+                    result = (String) data;
+                }
+
+                break;
+            case BSC_SOLIDITY:
+                BusinessContract2 businessContract3 = bscBusinessContractService.load(contractAddress);
+                if ("useFuncParams".equals(key)) {
+                    result = businessContract3.get(contractFunc, funcParams);
+                } else {
+                    result = businessContract3.get(contractFunc, param);
+                }
+                log.info("查询成功: {}", result);
+                break;
+            case FABRIC_WASM:
+                FabricChainCodeInvokeReq fabricChainCodeInvokeReq = new FabricChainCodeInvokeReq();
+                fabricChainCodeInvokeReq.setChainCodeName(contractAddress);
+                fabricChainCodeInvokeReq.setFunction(contractFunc);
+                fabricChainCodeInvokeReq.setChannelId(FABRIC_CHANNEL_ID);
+                fabricChainCodeInvokeReq.setChainCodeVersion(FABRIC_CHAIN_CODE_VERSION);
+                fabricChainCodeInvokeReq.setLang(FABRIC_LANG);
+                fabricChainCodeInvokeReq.setInit(false);
+                fabricChainCodeInvokeReq.setArgs(Arrays.asList(param));
+
+                FabricChainCodeInvokeResponse response = fabricService.invoke(fabricChainCodeInvokeReq);
+                result = response.getPayload().toString();
+                log.info("查询成功: {}", result);
+                break;
+            default:
+                throw new ApiException("非法参数");
+        }
+        return result;
+    }
+
+    //为业务链设置did合约
+    public Map<String, Object> setDidAddress(SetDIDRequest request) throws Exception {
+        ContractTypeEnum contractTypeEnum = request.getContractType();
+        Map<String, Object> map = new HashMap<>();
+        switch (contractTypeEnum) {
+//            case CHAINMAKER_SOLIDITY:
+//                BusinessContract businessContract = chainmakerSolidityService.deploy(request.getContractName(),
+//                        request.getVersion(), request.getFilePath());
+//                map.put("address", businessContract.getDeployInfo().getContract().getAddress());
+//                map.put("txHash", businessContract.getDeployInfo().getTransactionReceipt().getTransactionHash());
+//                break;
+            case CHAINMAKER_WASM:
+                throw new ApiException("chainmaker business can not set did address");
+                //break;
+//            case LINGSHU_SOLIDITY:
+//                lingshuBusinessContractService.deploy(request.getContractName(), request.getVersion(), request.getFilePath());
+//            break;
+            case ETHEREUM_SOLIDITY:
+                BusinessContract2 businessContract2 = ethereumBusinessContractService.load(request.getBusiContractAddress());
+                RemoteFunctionCall<TransactionReceipt> receiptRemoteFunctionCall = businessContract2
+                        .setDidAddress("setDidAddress", request.getDidContractAddress());
+                TransactionReceipt transactionReceipt = receiptRemoteFunctionCall.send();
+                log.info("setDidAddress成功: {}", transactionReceipt);
+                map.put("txHash", transactionReceipt.getTransactionHash());
+                break;
+            case BCOS_SOLIDITY:
+//                OpenAPIResp openAPIResp = bcosService.deploy(request);
+//                log.info("保存deployContract成功: {}", openAPIResp);
+//                Object data = openAPIResp.getData();
+//                if (data != null) {
+//                    JSONObject jsonObject1 = JSONUtil.parseObj(data);
+//                    map.put("address", jsonObject1.getStr("address"));
+//                    map.put("txHash", jsonObject1.getStr("txHash"));
+//                }
+                break;
+            case BSC_SOLIDITY:
+                BusinessContract2 businessContract4 = bscBusinessContractService.load(request.getBusiContractAddress());
+                RemoteFunctionCall<TransactionReceipt> receiptRemoteFunctionCall4 = businessContract4
+                        .setDidAddress("setDidAddress", request.getDidContractAddress());
+                TransactionReceipt transactionReceipt4 = receiptRemoteFunctionCall4.send();
+                log.info("setDidAddress成功: {}", transactionReceipt4);
+                map.put("txHash", transactionReceipt4.getTransactionHash());
+                break;
+            default:
+                throw new ApiException("非法参数");
+        }
+        return map;
+    }
+}

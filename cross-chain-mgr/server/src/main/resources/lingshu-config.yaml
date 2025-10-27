@@ -1,0 +1,28 @@
+# common conf
+common:
+  logLevel: "fatal"                    # Log levels for cpp-sdk: trace,debug,info,warn,error,fatal
+
+# network conf
+network:
+  defaultLedgerId: 1                  # Default ledger id
+  peer: "192.168.1.177:20200"             # The peer to connect
+  receiptTimeout: 10000               # Timeout for waiting for receipt after sending a transaction
+  connectTimeout: 3000                # Timeout for connecting to the peer
+
+# crypto conf
+crypto:
+  isGm: false                               # Guomi SSL or not(must be same as chain crypto type)
+  certDir: "local/lingshu-conf"                           # Cert path
+#  caCert: "conf/sm_ca.crt"                 # NON-SM or SM CA cert file path
+#  sslCert: "conf/sm_sdk.crt"               # NON-SM or SM SSL cert file path
+#  sslKey: "conf/sm_sdk.key"                # NON-SM or SM SSL key file path
+#  enSslCert: "conf/sm_ensdk.crt"           # SM encryption cert file path
+#  enSslKey: "conf/sm_ensdk.key"            # SM ssl cert file path
+
+# account conf
+account:
+  keyStoreDir: "accounts"         # The directory to load/store the account file
+# filePath: ""                    # The account file path
+  fileFormat: "pem"               # The storage format of account file: pem/p12
+# address: ""                     # The account address to send transactions
+# password: ""                    # The password to load the account file

@@ -1,0 +1,25 @@
+version: '3.7'
+
+networks:
+  [(${env})]:
+    name: [(${network})]
+
+services:
+
+  [(${containerName})]:
+    image: hyperledger/fabric-ca:1.4.7
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=[(${caName})]
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=[(${caPort})]
+      - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:[(${caListenPort})]
+    ports:
+      - "[(${caPort})]:[(${caPort})]"
+      - "[(${caListenPort})]:[(${caListenPort})]"
+    command: sh -c 'fabric-ca-server start -b [(${caAdmin})]:[(${caAdminPw})] -d'
+    volumes:
+      - [(${caDir})]:/etc/hyperledger/fabric-ca-server
+    container_name: [(${containerName})]
+    networks:
+      - [(${env})]

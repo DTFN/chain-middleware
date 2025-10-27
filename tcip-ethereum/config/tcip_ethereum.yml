@@ -1,0 +1,67 @@
+# 网关基础配置
+base:
+  gateway_id: 1                                # 跨链网关ID（注册的时候由中继网关返回）
+  gateway_name: x_gw_eth                       # 跨链网关的名称（尽量保持唯一）
+  address: 127.0.0.1:39998                     # 中继网关访问跨链网关的地址
+  server_name: chainmaker.org                  # 跨链网关的server name（证书中的sans）
+  tls_ca: config/cert/client/ca.crt            # 跨链网关的ca证书
+  client_cert: config/cert/client/client.crt   # 跨链网关的client证书
+  client_key: config/cert/client/client.key    # 跨链网关的client私钥
+  to_gateway_list:                             # 允许向哪些跨链网关发起跨链请求，不配置则没有限制
+  from_gateway_list:                           # 允许哪些跨链网关对本网关发起跨链请求
+  tx_verify_type: rpc                          # 交易验证方式，取rpc/notneed
+  tx_verify_interface:                         # 交易验证接口，如果是notneed则不需要配置
+    address: 127.0.0.1:39998/v1/TxVerify       # 交易验证地址（本项目为本服务地址）
+    tls_enable: true                           # 是否启用tls，ture的话要配置下面两个个证书路径和域名
+    tls_ca: config/cert/client/ca.crt          # ca证书
+    client_cert: config/cert/client/client.crt # 客户端证书
+    host_name: chainmaker.org                  # 域名
+  call_type: grpc                              # 调用方式 取值为grpc，暂不支持restful
+  default_timeout: 1000                        # 默认全局延时，s
+
+# WebListener配置，用于监听跨链SDK发送的跨链请求
+rpc:
+  port: 39998                        # Web服务监听端口
+  restful:
+    max_resp_body_size: 10           # body最大值，单位M
+  tls:
+    ca_file: config/cert/server/ca.crt          # tlsca文件
+    cert_file: config/cert/server/server.crt    # tls证书文件
+    key_file: config/cert/server/server.key     # tls私钥文件
+    server_name: chainmaker.org                 # 证书中的域名
+  max_send_msg_size: 10                # 最大发送数据大小，单位M
+  max_recv_msg_size: 10                # 最大接收数据大小，单位M
+
+# 中继链配置
+relay:
+  address: 127.0.0.1:19999                       # 中继网关地址
+  server_name: chainmaker.org                    # 中继网关域名
+  tls_ca: config/cert/server/ca.crt              # 中继网关的tlsca证书
+  client_cert: config/cert/client/client.crt     # 中继网关客户端证书
+  client_key: config/cert/client/client.key      # 中继网关客户端私钥
+  call_type: grpc                                # 中继网关调用方式，grpc/restful
+
+# leveldb数据库路径
+db_path: "./database"
+
+# 日志配置，用于配置日志的打印
+# 模块名称取值为：
+#  default:默认的日志配置,未配置日志的模块会使用该配置
+#  server:服务日志
+#  cli:命令行日志
+#  access_control:权限控制日志
+#  cross_chain_tx_manager:跨链交易日志
+#  gateway_manager:跨链网关管理日志
+#  handler:控制器日志
+#  prove_manager:交易证明日志
+#  relay_chain_manager:跨链链管理日志
+#  rquest_manager:接口请求日志
+#  rpc_server:rpc日志
+log:
+  - module: default                 # 模块名称(取值为：default/start/register)
+    log_level: DEBUG                 # 日志打印级别
+    file_path: logs/default.log     # 日志文件路径
+    max_age: 365                    # 日志最长保存时间，单位：天
+    rotation_time: 1                # 日志滚动时间，单位：小时
+    log_in_console: true           # 是否展示日志到终端，仅限于调试使用
+    show_color: true                # 是否打印颜色日志

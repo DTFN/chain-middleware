@@ -1,0 +1,18 @@
+[Network]
+    Type="channel"
+    CAFile="sdk/ca.crt"
+    Cert="sdk/sdk.crt"
+    Key="sdk/sdk.key"
+[[Network.Connection]]
+    NodeURL="192.168.3.62:30200"
+    GroupID=1
+# [[Network.Connection]]
+# NodeURL="127.0.0.1:20200"
+# GroupID=2
+
+[Account]
+    KeyFile="ci/0xf009b8c5f279c91dfae6f980c0167ff6888f25c2.pem"
+
+[Chain]
+    ChainID=1
+    SMCrypto=false

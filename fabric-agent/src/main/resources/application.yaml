@@ -1,0 +1,66 @@
+# server version
+version: v1.0.0
+
+# server config
+server:
+  port: 25007
+  servlet:
+    context-path: /fabric-agent
+
+# logback file
+logging:
+  config: classpath:logback-spring.xml
+
+spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 209715200
+      max-request-size: 524288000
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:file:/tmp/fabricAgentTest
+    username: h2
+    password: h2
+  h2:
+    console:
+      enabled: true
+      path: /h2
+      settings:
+        web-allow-others: true
+        trace: true
+
+# fabric
+fabric:
+  version: 2.2
+  mode:
+    link: true
+  log-level: DEBUG
+
+chaincode:
+  timeout: 60000
+
+constant:
+  caHost: 127.0.0.1
+  caPort: 7054
+  caAdmin: admin
+  caPassword: 111
+  metadataSource: conf/meta-infs/end2endit
+  chainCodePolicy: conf/chaincodeendorsementpolicy.yaml
+  installDir: /home/songzehao/opt
+  # timeout for starting nodes, unit: ms
+  startNodesTimeout: 120000
+  organizationsPath: /home/x/Downloads/fabric-organizations
+
+# prometheus
+monitor:
+  type: PROMETGEUS
+
+prometheus:
+  uri: 192.168.3.20:9090
+
+# restTemplate
+restTemplate:
+  healthz:
+    readTimeOut: 10000
+    connectTimeout: 10000
