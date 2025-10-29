@@ -2,7 +2,7 @@ package com.lingshu.server.core.web3j.contract;
 
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.HexUtil;
-import com.lingshu.server.common.exception.ChangAnTxException;
+import com.lingshu.server.common.exception.ChainmakerTxException;
 import com.lingshu.server.core.web3j.chainmaker.client.ChainmakerChainClient;
 import com.lingshu.server.core.web3j.chainmaker.util.ChainmakerAccountUtil;
 import com.google.common.collect.ImmutableMap;
@@ -167,7 +167,7 @@ public abstract class ChainmakerContract {
             throw new RuntimeException(e);
         }
         if (txResponse.getCode() != ResultOuterClass.TxStatusCode.SUCCESS) {
-            throw new ChangAnTxException(txResponse);
+            throw new ChainmakerTxException(txResponse);
         }
         return txId;
     }
@@ -197,7 +197,7 @@ public abstract class ChainmakerContract {
 
         // 判断是否成功
         if (txResponse.getCode() != ResultOuterClass.TxStatusCode.SUCCESS) {
-            throw new ChangAnTxException(txResponse);
+            throw new ChainmakerTxException(txResponse);
         }
 
         // 获取返回值

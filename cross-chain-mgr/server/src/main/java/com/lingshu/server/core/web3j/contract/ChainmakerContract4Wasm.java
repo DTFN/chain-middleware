@@ -3,7 +3,7 @@ package com.lingshu.server.core.web3j.contract;
 import cn.hutool.core.convert.Convert;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
-import com.lingshu.server.common.exception.ChangAnTxException;
+import com.lingshu.server.common.exception.ChainmakerTxException;
 import com.lingshu.server.core.web3j.chainmaker.client.ChainmakerChainClient;
 import com.lingshu.server.core.web3j.chainmaker.util.ChainmakerAccountUtil;
 import com.lingshu.server.core.web3j.chainmaker.util.ChainmakerAccountUtil4Busi;
@@ -173,7 +173,7 @@ public abstract class ChainmakerContract4Wasm {
             throw new RuntimeException(e);
         }
         if (txResponse.getCode() != ResultOuterClass.TxStatusCode.SUCCESS) {
-            throw new ChangAnTxException(txResponse);
+            throw new ChainmakerTxException(txResponse);
         }
         return txId;
     }
@@ -210,7 +210,7 @@ public abstract class ChainmakerContract4Wasm {
             throw new RuntimeException(e);
         }
         if (txResponse.getCode() != ResultOuterClass.TxStatusCode.SUCCESS) {
-            throw new ChangAnTxException(txResponse);
+            throw new ChainmakerTxException(txResponse);
         }
         ResultOuterClass.ContractResult contractResult = txResponse.getContractResult();
         if (contractResult.getCode() != 0) {
@@ -275,7 +275,7 @@ public abstract class ChainmakerContract4Wasm {
         }
 
         if (txResponse.getCode() != ResultOuterClass.TxStatusCode.SUCCESS) {
-            throw new ChangAnTxException(txResponse);
+            throw new ChainmakerTxException(txResponse);
         }
         ResultOuterClass.ContractResult contractResult = txResponse.getContractResult();
         if (contractResult.getCode() != 0) {

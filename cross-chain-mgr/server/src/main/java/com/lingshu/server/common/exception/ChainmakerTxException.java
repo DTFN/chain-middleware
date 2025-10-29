@@ -19,17 +19,17 @@ import java.util.Set;
  * @date Created in 2021-08-20 17:24
  */
 @Data
-public class ChangAnTxException extends RuntimeException {
+public class ChainmakerTxException extends RuntimeException {
     private ResultOuterClass.TxResponse txResponse;
     private String message;
 
-    public ChangAnTxException(ResultOuterClass.TxResponse txResponse, String message) {
+    public ChainmakerTxException(ResultOuterClass.TxResponse txResponse, String message) {
         super(message);
         this.txResponse = txResponse;
         this.message = message;
     }
 
-    public ChangAnTxException(ResultOuterClass.TxResponse txResponse) {
+    public ChainmakerTxException(ResultOuterClass.TxResponse txResponse) {
         super("Send Invoker Contract Request Failed, result = " + Optional.ofNullable(txResponse).map(ResultOuterClass.TxResponse::getMessage).orElse("not known"));
         this.txResponse = txResponse;
         this.message = "Send Invoker Contract Request Failed, result = " + Optional.ofNullable(txResponse).map(ResultOuterClass.TxResponse::getMessage).orElse("not known");
