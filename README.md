@@ -71,16 +71,15 @@
 - **配置管理**：调整网关名称和节点连接配置参数
 
 ## tcip-fabric: Fabric跨链网关
-基于长安链跨链的[Fabric跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-fabric) 进行二次开发，通过封装Fabric SDK与自定义业务逻辑，为跨链操作提供了便捷的区块链操作接口。
+基于长安链跨链的[Fabric跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-fabric) 进行二次开发，通过配置优化和功能扩展，增强了跨链交易处理能力与可验证凭证（VC）支持。
 
-主要包含以下核心功能：
+主要包含以下核心功能改进：
 
-- **链客户端实现**：重构Fabric的channel、ledger和event客户端，支持合约调用、事件监听等核心交互
-- **VC跨链支持**：新增Verifiable Credential跨链交易处理逻辑，支持DID文档更新等操作
-- **交易验证**：实现基于Fabric的交易验证(TxProve/TxVerify)，移除ChainMaker特有验证机制
-- **事件处理增强**：适配Fabric事件格式，支持数组和map事件数据解析
-- **配置管理**：支持Fabric多组织、orderer等特有配置结构，增加链ID维护功能
-- **跨链状态查询**：新增IsCrossChainSuccess接口实现，验证跨链交易状态
+- **跨链交易增强**：新增peer节点指定功能，强化交易端点控制和调试日志
+- **VC凭证支持**：实现可验证凭证的解析处理、跨链传输及DID文档更新
+- **中继链扩展**：支持特殊链ID处理和DID消息全局广播
+- **特殊业务支持**：新增$VC_CROSS等特殊跨链类型处理能力
+
 
 
 ## tcip-bcos: BCOS跨链网关
