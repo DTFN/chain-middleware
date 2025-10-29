@@ -59,19 +59,64 @@
 - **跨链交易管理**：提供零数链与以太坊链的跨链交易处理功能，实现跨链交易管理
 
 ## tcip-chainmaker: 长安链跨链网关
-基于长安链跨链的[Fabric跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-chainmaker) 进行二次开发，主要用于处理长安链的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
+基于长安链跨链的[Fabric跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-chainmaker) 进行二次开发，通过增强VC/DID等数字身份要素的跨链支持，实现了更复杂的跨链业务场景处理能力。
+
+主要包含以下核心功能增强：
+
+- **VC跨链功能**：提供可验证凭证的跨链处理能力，支持VC合约事件解析和专用交易处理
+- **DID跨链更新**：实现DID更新消息的全链广播功能，支持$relayer类型特殊交易处理
+- **全链路由管理**：维护网关连接的所有链标识集合，提供ChainRid相关操作方法
+- **调试日志增强**：在合约调用、事件解析等关键流程增加详细日志输出
+- **ABI编码工具**：提供ABI编码相关工具支持（具体实现未展示）
+- **配置管理**：调整网关名称和节点连接配置参数
 
 ## tcip-fabric: Fabric跨链网关
 基于长安链跨链的[Fabric跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-fabric) 进行二次开发，主要用于Fabric的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
 
 ## tcip-bcos: BCOS跨链网关
-基于长安链跨链的[Bcos跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，主要用于处理Bcos的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
+基于长安链跨链的[Bcos跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，通过替换Chainmaker为FISCO-BCOS区块链支持，重构了客户端交互、事件监听和交易验证等核心模块，实现了新的区块链适配层。
+
+主要包含以下核心功能变更：
+
+- **区块链客户端适配**：从Chainmaker迁移至FISCO-BCOS区块链，实现新的客户端接口与SDK集成
+- **事件监听机制**：重构事件处理流程，支持FISCO-BCOS事件订阅及ABI数据解码
+- **合约调用逻辑**：调整合约交互方式，新增ABI编解码功能以适应FISCO-BCOS数据类型
+- **交易验证体系**：实现基于FISCO-BCOS的交易证明生成与验证机制
+- **跨链扩展功能**：
+  - **VC跨链支持**：增加可验证凭证的特殊处理逻辑与参数编码
+  - **DID管理**：新增DID更新功能及相关合约调用逻辑
+- **配置管理**：重构链配置体系，支持FISCO-BCOS特有配置格式与链ID管理
+
 
 ## tcip-ethereum: Ethereum跨链网关
-基于长安链跨链的[Bcos跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，移除Bcos相关模块，通过以太坊的代理服务实现与以太坊私有链的通信。主要用于处理以太坊的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
+基于长安链跨链的[Bcos跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，移除Bcos相关模块，通过适配Ethereum/FISCO-BCOS链客户端与自定义业务逻辑，实现了多链环境下的跨链操作与管理功能。
+
+主要包含以下核心功能：
+
+- **链客户端适配**：从Chainmaker迁移至支持Ethereum链，实现合约调用、交易证明和事件监听功能
+- **DID管理**：提供DID合约的更新/查询功能，支持通过可验证凭证(VC)调用合约
+- **跨链交易管理**：处理基于事件的跨链触发，管理跨链交易生命周期（try/confirm/cancel）
+- **交易验证**：实现基于交易哈希的验证机制，支持交易证明的生成与验证
+- **合约调用**：支持ABI编码参数处理，提供合约调用的RPC接口
+- **网络通信**：采用HTTP/WebSocket与节点交互，实现交易和事件通知机制
+- **配置管理**：适配Ethereum/BCOS链配置格式，支持多链环境管理
+- **工具链优化**：新增BCOS链安装脚本，调整启动脚本适配新客户端
+
 
 ## tcip-lingshu: 零数链跨链网关
-基于长安链跨链的[Bcos跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，移除Bcos相关模块，通过零数链的代理服务实现与零数链的通信。主要用于处理零数链的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
+基于长安链跨链的[Bcos跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，移除Bcos相关模块，通过封装FISCO-BCOS SDK与TCIP协议实现，为跨链操作提供了便捷的区块链操作接口。
+
+主要包含以下核心功能：
+
+- **区块链客户端实现**：提供FISCO-BCOS区块链的完整支持，包括合约调用、交易验证等核心功能
+- **智能合约交互**：实现VC可验证凭证和DID管理合约的交互逻辑，支持参数处理和ABI解析
+- **交易验证机制**：提供基于FISCO-BCOS的交易验证功能(TxProve)，支持交易哈希和区块链ID验证
+- **事件处理系统**：重构事件监听机制，支持FISCO-BCOS的事件订阅和数据处理
+- **跨链协议支持**：实现与TCIP中继链的交互协议，支持跨链交易全生命周期管理
+- **DID身份管理**：提供DID文档的更新和验证功能，集成DID管理合约交互接口
+- **配置管理模块**：支持多链ID管理和FISCO-BCOS专属配置结构
+- **兼容性API**：维护TCIP协议兼容的RPC接口，同时提供FISCO-BCOS特有接口
+
 
 # 环境要求：
 * 操作系统: x86_64 GNU/Linux
