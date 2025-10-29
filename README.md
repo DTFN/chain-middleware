@@ -18,3 +18,4 @@
 * 操作系统: x86_64 GNU/Linux
 * JDK: Oracle JDK8+或Open JDK8 +
 * Docker: docker version 20+
+* Go: go1.17.7 linux/amd64
