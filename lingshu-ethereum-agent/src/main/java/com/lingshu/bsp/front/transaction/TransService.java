@@ -19,12 +19,8 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONUtil;
 import com.lingshu.bsp.front.base.config.SdkConfig;
 import com.lingshu.bsp.front.base.properties.Constants;
-import com.lingshu.bsp.front.event.WebSocketServerBscHandler;
 import com.lingshu.bsp.front.event.WebSocketServerEthHandler;
 import com.lingshu.bsp.front.event.WebSocketServerLsHandler;
-import com.lingshu.bsp.front.rpcapi.bsc.BscApiService;
-import com.lingshu.bsp.front.rpcapi.bsc.contract.BusiCenterBsc;
-import com.lingshu.bsp.front.rpcapi.bsc.contract.DIDManagerBsc;
 import com.lingshu.bsp.front.rpcapi.eth.contract.DIDManagerEth;
 import com.lingshu.bsp.front.rpcapi.eth.EthApiService;
 import com.lingshu.bsp.front.rpcapi.eth.contract.BusiCenterEth;
@@ -71,11 +67,6 @@ public class TransService {
     private SdkConfig sdkConfig;
     @Autowired
     private EthApiService ethApiService;
-    @Resource
-    private BscApiService bscApiService;
-
-    @Value("${bscGasLimit:30000000}")
-    private Long bscGasLimit;
 
     @Value("${ethGasLimit:30000000}")
     private Long ethGasLimit;
@@ -102,28 +93,6 @@ public class TransService {
         }
     }
 
-    public void addBscCrossChainMsgListener(String address) {
-        log.info("listen bsc {}", address);
-        BusiCenterBsc busiCenterBsc = BusiCenterBsc.load(address, bscApiService.web3j(),
-                bscApiService.transactionManager(), new StaticGasProvider(BigInteger.valueOf(20_000_000_000L), BigInteger.valueOf(2_800_000)));
-        try {
-            busiCenterBsc.cROSS_CHAIN_VCEventFlowable(DefaultBlockParameterName.EARLIEST, DefaultBlockParameterName.LATEST).subscribe(new Consumer<BusiCenterBsc.CROSS_CHAIN_VCEventResponse>() {
-                @Override
-                public void accept(BusiCenterBsc.CROSS_CHAIN_VCEventResponse response) throws Exception {
-                    List arrList = new ArrayList<>();
-                    Map<String, Object> bean = BeanUtil.beanToMap(response.log);
-                    arrList.add(bean);
-                    log.info("bsc event size: {}", arrList.size());
-                    String jsonStr = JSONUtil.toJsonStr(arrList);
-                    WebSocketServerBscHandler.broadcast(jsonStr);
-                    log.info("{}", jsonStr);
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public void addCrossChainMsgListener(String address) {
         log.info("listen {}", address);
         IClient sdkClient = rpcApiService.getSdkClient(1);
@@ -141,25 +110,6 @@ public class TransService {
         });
     }
 
-    public TransactionReceipt bscVcCal(@Valid @RequestBody VcCalReq req) {
-        BusiCenterEth didManagerEth = BusiCenterEth.load(req.getAddress(), bscApiService.getWeb3j(), bscApiService.getRawTransactionManager(),
-                new StaticGasProvider(BigInteger.valueOf(20_000_000_000L), BigInteger.valueOf(bscGasLimit)));
-
-        try {
-            org.web3j.protocol.core.methods.response.TransactionReceipt receipt = didManagerEth.busiRun(req.getFuncName(), req.getVc()).send();
-            TransactionReceipt result = BeanUtil.copyProperties(receipt, TransactionReceipt.class);
-            result.setStatus(receipt.isStatusOK() ? 0 : 1);
-            result.setContractAddress(req.getAddress());
-            log.info("receipt: {}",JSONUtil.toJsonStr(result));
-            return result;
-        } catch (Exception e) {
-            log.error("bsc transaction fail", e);
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
     public TransactionReceipt ethVcCal(@Valid @RequestBody VcCalReq req) {
         BusiCenterEth didManagerEth = BusiCenterEth.load(req.getAddress(), ethApiService.getWeb3j(), ethApiService.getRawTransactionManager(),
                 new StaticGasProvider(BigInteger.valueOf(20_000_000_000L), BigInteger.valueOf(ethGasLimit)));
@@ -173,25 +123,6 @@ public class TransService {
             return result;
         } catch (Exception e) {
             log.error("eth transaction fail", e);
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    // BSC did更新
-    public Object bscDidUpdate(@Valid @RequestBody DIDUpdate req) {
-        DIDManagerBsc didManagerBsc = DIDManagerBsc.load(req.getAddress(), bscApiService.getWeb3j(), bscApiService.getRawTransactionManager(),
-                new StaticGasProvider(BigInteger.valueOf(20_000_000_000L), BigInteger.valueOf(2_800_000)));
-
-        try {
-            org.web3j.protocol.core.methods.response.TransactionReceipt receipt = didManagerBsc.updateDID(req.getDid(), req.getDidDoc()).send();
-            TransactionReceipt result = BeanUtil.copyProperties(receipt, TransactionReceipt.class);
-            result.setStatus(receipt.isStatusOK() ? 0 : 1);
-            log.info("bsc receipt: {}", JSONUtil.toJsonStr(result));
-            return result;
-        } catch (Exception e) {
-            log.error("bsc transaction fail", e);
             e.printStackTrace();
         }
 

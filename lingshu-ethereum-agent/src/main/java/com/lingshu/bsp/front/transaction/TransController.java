@@ -55,31 +55,9 @@ public class TransController extends BaseController {
      * transHandle through signer
      * @return
      */
-    @GetMapping("/addCrossChainMsgListener/bsc/{address}")
-    public void addBscCrossChainMsgListener(@PathVariable("address") String address) throws Exception {
-        transServiceImpl.addBscCrossChainMsgListener(address);
-    }
-
-    /**
-     * transHandle through signer
-     * @return
-     */
     @GetMapping("/addCrossChainMsgListener/{address}")
     public void addCrossChainMsgListener(@PathVariable("address") String address) throws Exception {
         transServiceImpl.addCrossChainMsgListener(address);
-    }
-
-    /**
-     * transHandle through signer
-     * @return
-     */
-    @ApiOperation(value = "transaction handling", notes = "transaction handling")
-    @ApiImplicitParam(name = "reqTransHandle", value = "transaction info", required = true, dataType = "ReqTransHandleWithSign")
-    @PostMapping("/bsc/vc-cal")
-    public TransactionReceipt bscVcCal(@Valid @RequestBody VcCalReq req) throws Exception {
-        log.info("vcCal, {}", JsonUtils.objToString(req));
-        TransactionReceipt obj =  transServiceImpl.bscVcCal(req);
-        return obj;
     }
 
     /**
@@ -92,19 +70,6 @@ public class TransController extends BaseController {
     public TransactionReceipt ethVcCal(@Valid @RequestBody VcCalReq req) throws Exception {
         log.info("vcCal, {}", JsonUtils.objToString(req));
         TransactionReceipt obj =  transServiceImpl.ethVcCal(req);
-        return obj;
-    }
-
-    /**
-     * transHandle through signer
-     * @return
-     */
-    @ApiOperation(value = "transaction handling", notes = "transaction handling")
-    @ApiImplicitParam(name = "reqTransHandle", value = "transaction info", required = true, dataType = "ReqTransHandleWithSign")
-    @PostMapping("/bsc/did-update")
-    public Object bscDidUpdate(@Valid @RequestBody DIDUpdate didUpdate) throws Exception {
-        log.info("bsc didUpdate, {}", JsonUtils.objToString(didUpdate));
-        Object obj =  transServiceImpl.bscDidUpdate(didUpdate);
         return obj;
     }
 

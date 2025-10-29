@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Getter
 public enum ContractTypeEnum {
-    //合约类型( 1-长安链solidity,2-长安链wasm,3-零数链solidity,4-以太坊solidity,5-bcos的solidity,6-fabric的wasm )
+    //合约类型( 1-长安链solidity,2-长安链wasm,3-零数链solidity,4-以太坊solidity,5-bcos的solidity,6-bsc的solidity )
     CHAINMAKER_SOLIDITY("1", "长安链solidity"),
     CHAINMAKER_WASM("2", "长安链wasm"),
     LINGSHU_SOLIDITY("3", "零数链solidity"),
