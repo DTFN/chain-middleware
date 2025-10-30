@@ -4,15 +4,15 @@
 
 ## contract: 智能合约
 
-跨链功能相关的智能合约，适配以太坊、Hyperledger Fabric和ChainMaker等区块链平台，提供业务处理、DID管理和资源域管理等核心功能。
+跨链功能相关的智能合约，适配ChainMaker、Hyperledger Fabric、和以太坊等区块链平台，提供业务处理、DID管理和资源域管理等核心功能。
 
 主要包含以下核心合约：
 
-- **busi** - 业务合约，包含BusiCenter和DIDManager的Java及Solidity实现，提供基础业务逻辑和去中心化身份管理功能
-- **busi-fabric** - Hyperledger Fabric平台的Go语言实现，包含配置文件和测试脚本
-- **did-manager-fabric** - 针对Fabric平台的DID管理合约，包含相关Go语言工具类
-- **did-manager-wasm/chainmaker** - ChainMaker平台的DID管理WASM合约实现
-- **resource-domain** - 资源域管理合约，包含ResourceDomain的双语言实现
+- **busi** - 业务示例合约，包含BusiCenter和DIDManager的Java及Solidity实现，提供基础业务逻辑和去中心化身份管理功能
+- **busi-fabric** - 基于Go语言实现的Hyperledger Fabric平台的业务示例合约，包含配置文件和测试脚本
+- **did-manager-fabric** - 基于Go语言实现的Hyperledger Fabric平台的DID管理合约以及相关工具类
+- **did-manager-wasm** - 基于Rust语言实现的ChainMaker平台的DID管理WASM合约
+- **resource-domain** - 链上资源域管理合约，提供Solidity语言的合约代码、ABI、Bytecode与Java语言的客户端实
 
 ## tcip-relayer: 跨链中继网关
 
@@ -28,7 +28,7 @@
 
 ## cross-chain-mgr: 跨链管理服务
 
-跨链管理服务项目是区块链抽象中间件体系的核心组件之一。该项目主要负责提供访问业务链与中继链的功能，通过HTTP接口为用户提供DID注册、资源域名管理和业务合约访问等核心服务。
+跨链管理服务是区块链抽象中间件体系的核心组件之一。该服务主要负责提供访问业务链与中继链的功能，通过HTTP接口为用户提供DID注册、资源域名管理和业务合约访问等核心服务。
 
 主要包含以下核心功能：
 
@@ -41,7 +41,7 @@
 
 ## fabric-agent: Fabric代理服务
 
-基于Java的区块链中间件项目，主要用于与 Hyperledger Fabric 区块链网络进行交互和管理。
+基于Java语言开发的区块链中间件，主要用于与 Hyperledger Fabric 区块链网络进行交互和管理。
 
 主要包含以下核心功能：
 - **链码管理**：提供链码的部署、升级、查询、删除等功能，实现智能合约管理
@@ -50,7 +50,7 @@
 
 ## lingshu-ethereum-agent: 零数与以太坊代理服务
 
-基于Java的区块链中间件项目，通过封装LingShuChain SDK与Web3j库和自定义业务逻辑，为跨链操作提供了便捷的区块链操作接口。
+基于Java语言开发的区块链中间件，通过封装LingShuChain SDK与Web3j库和自定义业务逻辑，为跨链操作提供了便捷的区块链操作接口。
 
 主要包含以下核心功能：
 
@@ -59,7 +59,7 @@
 - **跨链交易管理**：提供零数链与以太坊链的跨链交易处理功能，实现跨链交易管理
 
 ## tcip-chainmaker: 长安链跨链网关
-基于长安链跨链的[Chainmaker跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-chainmaker) 进行二次开发，主要用于处理长安链的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
+基于长安链跨链的[ChainMaker跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-chainmaker) 进行二次开发，主要用于处理长安链的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
 
 主要包含以下核心功能：
 
@@ -81,22 +81,8 @@
 - **中继链扩展**：支持特殊链ID处理和DID消息全局广播
 - **网关注册与更新**：Fabric网关的注册和信息更新功能，维护网关间的连接信息
 
-
-## tcip-bcos: BCOS跨链网关
-基于长安链跨链的[Bcos跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，主要用于处理Bcos的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
-
-主要包含以下核心功能：
-
-- **事件监听订阅**：监听Bcos的链上事件以触发跨链流程
-- **VC跨链功能**：提供可验证凭证的跨链处理能力，支持VC合约事件解析和专用交易处理
-- **DID跨链更新**：实现DID更新消息的全链广播功能，支持$relayer类型特殊交易处理
-- **区块链客户端适配**：从Chainmaker迁移至FISCO-BCOS区块链，实现新的客户端接口与SDK集成
-- **事件监听机制**：重构事件处理流程，支持FISCO-BCOS事件订阅及ABI数据解码
-- **网关注册与更新**：Bcos链网关的注册和信息更新功能，维护网关间的连接信息
-
-
 ## tcip-ethereum: Ethereum跨链网关
-基于长安链跨链的[Bcos跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，移除Bcos相关模块，通过以太坊的代理服务实现与以太坊私有链的通信。主要用于处理以太坊的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
+基于长安链跨链的[BCOS跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，移除Bcos相关模块，通过以太坊的代理服务实现与以太坊私有链的通信。主要用于处理以太坊的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
 
 主要包含以下核心功能：
 
@@ -109,7 +95,7 @@
 - **网关注册与更新**：以太坊链网关的注册和信息更新功能，维护网关间的连接信息
 
 ## tcip-lingshu: 零数链跨链网关
-基于长安链跨链的[Bcos跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，移除Bcos相关模块，通过零数链的代理服务实现与零数链的通信。主要用于处理零数链的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
+基于长安链跨链的[BCOS跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，移除Bcos相关模块，通过零数链的代理服务实现与零数链的通信。主要用于处理零数链的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
 
 主要包含以下核心功能：
 
@@ -120,6 +106,17 @@
 - **跨链协议支持**：实现与TCIP中继链的交互协议，支持跨链交易全生命周期管理
 - **网关注册与更新**：零数链网关的注册和信息更新功能，维护网关间的连接信息
 
+## tcip-bcos: BCOS跨链网关
+基于长安链跨链的[BCOS跨链网关](https://git.chainmaker.org.cn/chainmaker/tcip-bcos) 进行二次开发，主要用于处理Bcos的跨链交易和通信，提供跨链网关的注册，管理跨链消息的转发和回滚。
+
+主要包含以下核心功能：
+
+- **事件监听订阅**：监听Bcos的链上事件以触发跨链流程
+- **VC跨链功能**：提供可验证凭证的跨链处理能力，支持VC合约事件解析和专用交易处理
+- **DID跨链更新**：实现DID更新消息的全链广播功能，支持$relayer类型特殊交易处理
+- **区块链客户端适配**：从Chainmaker迁移至FISCO-BCOS区块链，实现新的客户端接口与SDK集成
+- **事件监听机制**：重构事件处理流程，支持FISCO-BCOS事件订阅及ABI数据解码
+- **网关注册与更新**：Bcos链网关的注册和信息更新功能，维护网关间的连接信息
 
 # 环境要求：
 * 操作系统: x86_64 GNU/Linux
