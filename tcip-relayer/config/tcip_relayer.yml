@@ -1,0 +1,68 @@
+# 网关基础配置
+base:
+  gateway_id: relay                           # 中继网关ID（保持唯一）
+  gateway_name: relay_gateway                 # 中继网关的名称（尽量保持唯一）
+  default_timeout: 1000                       # 全局默认超时时间
+
+# WebListener配置，用于监听跨链SDK发送的跨链请求
+rpc:
+  port: 19999                                   # Web服务监听端口
+  restful:
+    max_resp_body_size: 10                      # body最大值，单位M
+  tls:
+    mode: twoway                                # disable, oneway, twoway
+    ca_file: config/cert/server/ca.crt          # tlsca文件
+    cert_file: config/cert/server/server.crt    # tls证书文件
+    key_file: config/cert/server/server.key     # tls私钥文件
+    server_name: chainmaker.org                 # 证书中的域名
+  max_send_msg_size: 10                         # 最大发送数据大小，单位M
+  max_recv_msg_size: 10                         # 最大接收数据大小，单位M
+  client_key: config/cert/client/client.key     # 客户端私钥,用来访问跨链网关
+  client_cert: config/cert/client/client.crt    # 客户端证书,用来访问跨链网关
+
+# 中继链配置
+relay_chain:
+  chainmaker_sdk_config_path: config/sdk_config.yml                # 中继链sdk配置文件路径
+  users:                                                           # 创建合约需要的用户信息（需要满足中继链的签名策略）
+    - sign_key_path: config/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.sign.key   # 签名私钥路径
+      sign_crt_path: config/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.sign.crt   # 签名证书路径
+      org_id: wx-org1.chainmaker.org                                                           # 组织ID
+    - sign_key_path: config/crypto-config/wx-org2.chainmaker.org/user/admin1/admin1.sign.key
+      sign_crt_path: config/crypto-config/wx-org2.chainmaker.org/user/admin1/admin1.sign.crt
+      org_id: wx-org2.chainmaker.org
+    - sign_key_path: config/crypto-config/wx-org3.chainmaker.org/user/admin1/admin1.sign.key
+      sign_crt_path: config/crypto-config/wx-org3.chainmaker.org/user/admin1/admin1.sign.crt
+      org_id: wx-org3.chainmaker.org
+    - sign_key_path: config/crypto-config/wx-org4.chainmaker.org/user/admin1/admin1.sign.key
+      sign_crt_path: config/crypto-config/wx-org4.chainmaker.org/user/admin1/admin1.sign.crt
+      org_id: wx-org4.chainmaker.org
+
+# 日志配置，用于配置日志的打印
+# 模块名称取值为：
+#  default:默认的日志配置,未配置日志的模块会使用该配置
+#  server:服务日志
+#  cli:命令行日志
+#  access_control:权限控制日志
+#  cross_chain_tx_manager:跨链交易日志
+#  gateway_manager:跨链网关管理日志
+#  handler:控制器日志
+#  prove_manager:交易证明日志
+#  relay_chain_manager:中继链管理日志
+#  rquest_manager:接口请求日志
+#  rpc_server:rpc日志
+log:
+  - module: default                 # 模块名称(取值为：default/server/cli/access_control/)
+    log_level: DEBUG                 # 日志打印级别
+    file_path: logs/default.log     # 日志文件路径
+    max_age: 365                    # 日志最长保存时间，单位：天
+    rotation_time: 1                # 日志滚动时间，单位：小时
+    log_in_console: false           # 是否展示日志到终端，仅限于调试使用
+    show_color: true                # 是否打印颜色日志
+
+  - module: server                  # 模块名称
+    log_level: DEBUG                 # 日志打印级别
+    file_path: logs/server.log      # 日志文件路径
+    max_age: 365                    # 日志最长保存时间，单位：天
+    rotation_time: 1                # 日志滚动时间，单位：小时
+    log_in_console: false           # 是否展示日志到终端，仅限于调试使用
+    show_color: true                # 是否打印颜色日志

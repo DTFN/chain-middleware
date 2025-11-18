@@ -1,0 +1,35 @@
+server:
+  port: 13001
+  swagger:
+    enable: true
+
+contract-name:
+  did-manager: DID_MANAGER
+  resource-domain: RESOURCE_DOMAIN
+  business: BUSINESS_CONTRACT
+  business-wasm: BUSINESS_CONTRACT-WASM
+
+contract-address:
+  lingshu-business: "0xe9f5d5ea58ed76c0780564ad3d5fae3a524e5025"
+  ethereum-cross-save-business: "0xff215f712a1588ddb7061c645fac66283a5a9c27"
+  ethereum-business: "0x6d398d852d99043e788ad96086717fcddcd2aefb"
+  bcos-business: "0xb0676a3523360140c0a474f5f89da7fc999655ec"
+
+
+gas:
+  threshold:
+    sms-template: "SMS_254585014"
+    notify-retry: 5
+    cache-prefix: "gas-threshold:"
+
+lingshu:
+  enable: true
+
+ethereum:
+  enable: true
+  ip: 192.168.1.144
+  port: 8545
+
+bcos:
+  enable: true
+  config-path: classpath:bcos-config.toml

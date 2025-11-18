@@ -1,0 +1,29 @@
+#服务器信息
+http:
+    server_ip: 127.0.0.1
+    server_port: 4433
+    
+chain:
+    type: "chainmaker"
+    sdk_path: "./chainmaker/sdk_config.yml"
+    account_path: "./"
+    ledger_id: 1
+
+    msp_id: "Org1MSP"
+    crypto_path: "/home/drw/storage/fabric/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com"
+    peer_endpoint: "localhost:7051"
+    gateway_peer: "peer0.org1.example.com"
+    channel_name: "mychannel"
+    chaincode_name: "my_test_storage"
+
+    eth_url: "127.0.0.1:9545"
+    eth_account: "0xxxxx"
+
+ipfs:
+    address: 
+     - "127.0.0.1:5001"
+
+script:
+    path: "./script"
+
+

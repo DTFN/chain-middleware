@@ -1,0 +1,24 @@
+include(GNUInstallDirs)
+include(ExternalProject)
+
+
+# 编译库
+if (NOT CHAINMAKERSDK_ROOT_DIR)
+    set(INSTALL_DIR ${CMAKE_SOURCE_DIR}/deps)
+
+    set(CHAINMAKERSDK_ROOT_DIR ${INSTALL_DIR})
+    unset(INSTALL_DIR)
+endif()
+
+
+# 创建导入库
+set(CHAINMAKERSDK_INCLUDE_DIR ${CHAINMAKERSDK_ROOT_DIR}/include)
+set(CHAINMAKERSDK_LIBRARY_DIR ${CHAINMAKERSDK_ROOT_DIR}/lib)
+file(MAKE_DIRECTORY ${CHAINMAKERSDK_INCLUDE_DIR})
+
+add_library(Chainmakersdk SHARED IMPORTED)
+set_target_properties(Chainmakersdk PROPERTIES
+    IMPORTED_LOCATION ${CHAINMAKERSDK_LIBRARY_DIR}/libchainmaker_sdk.so
+)
+
+set_property(TARGET Chainmakersdk PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${LSSDK_INCLUDE_DIR})

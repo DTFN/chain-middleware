@@ -1,0 +1,168 @@
+Organizations:
+  - &[(${orderOrg.orgName})]
+      Name: [(${orderOrg.orgName})]
+
+      SkipAsForeign: false
+
+      ID: [(${orderOrg.mspId})]
+
+      MSPDir: "[(${chainPath})]/organizations/ordererOrganizations/[(${orderOrg.domain})]/msp"
+
+      Policies:
+        Readers:
+          Type: Signature
+          Rule: "OR('[(${orderOrg.mspId})].member')"
+        Writers:
+          Type: Signature
+          Rule: "OR('[(${orderOrg.mspId})].member')"
+        Admins:
+          Type: Signature
+          Rule: "OR('[(${orderOrg.mspId})].admin')"
+
+      OrdererEndpoints:
+        [# th:each="point : ${ordererList}"] - "[(${point.ip})]:[(${point.port})]"
+        [/]
+
+  - &[(${peerOrg.orgName})]
+      Name: [(${peerOrg.mspId})]
+
+      SkipAsForeign: false
+
+      ID: [(${peerOrg.mspId})]
+
+      MSPDir: "[(${chainPath})]/organizations/peerOrganizations/[(${peerOrg.domain})]/msp"
+
+      Policies:
+        Readers:
+          Type: Signature
+          Rule: "OR('[(${peerOrg.mspId})].member')"
+        Writers:
+          Type: Signature
+          Rule: "OR('[(${peerOrg.mspId})].member')"
+        Admins:
+          Type: Signature
+          Rule: "OR('[(${peerOrg.mspId})].admin')"
+        Endorsement:
+          Type: Signature
+          Rule: "OR('[(${peerOrg.mspId})].member')"
+
+      AnchorPeers:
+        [# th:each="peer : ${peerList}"]
+        - Host: [(${peer.ip})]
+          Port: [(${peer.port})]
+        [/]
+
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+
+  Orderer: &OrdererCapabilities
+    V2_0: true
+
+  Application: &ApplicationCapabilities
+    V2_0: true
+
+Application: &ApplicationDefaults
+  Organizations:
+
+  Policies:
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+
+  OrdererType: etcdraft
+
+  Addresses:
+    [# th:each="orderer : ${ordererList}"] - [(${orderer.ip})]:[(${orderer.port})]
+    [/]
+
+
+  EtcdRaft:
+    Consenters:
+      [# th:each="orderer : ${ordererList}"]
+      - Host: [(${orderer.ip})]
+        Port: [(${orderer.port})]
+        ClientTLSCert: "[(${chainPath})]/organizations/ordererOrganizations/[(${orderer.orgDomain})]/orderers/[(${orderer.domain})]/tls/server.crt"
+        ServerTLSCert: "[(${chainPath})]/organizations/ordererOrganizations/[(${orderer.orgDomain})]/orderers/[(${orderer.domain})]/tls/server.crt"
+      [/]
+
+  BatchTimeout: 2s
+
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 521 KB
+  MaxChannels: 0
+
+  Organizations:
+
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+
+  Capabilities:
+    <<: *ChannelCapabilities
+
+Profiles:
+
+  OneOrgOrdererGenesis:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *[(${orderOrg.orgName})]
+      Capabilities:
+        <<: *OrdererCapabilities
+    Consortiums:
+      SampleConsortium:
+        Organizations:
+          - *[(${peerOrg.orgName})]
+
+  Channel1:
+    Consortium: SampleConsortium
+    <<: *ChannelDefaults
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *[(${peerOrg.orgName})]
+      Capabilities:
+        <<: *ApplicationCapabilities

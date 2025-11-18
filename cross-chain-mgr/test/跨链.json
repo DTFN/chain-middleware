@@ -1,0 +1,480 @@
+{
+	"info": {
+		"_postman_id": "bfe2ffed-6b4b-48d5-a5d5-f24c235857a7",
+		"name": "跨链",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29403133"
+	},
+	"item": [
+		{
+			"name": "跨链",
+			"item": [
+				{
+					"name": "DID",
+					"item": [
+						{
+							"name": "查询DID信息",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/didManager/query?did=did-test0021",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"didManager",
+										"query"
+									],
+									"query": [
+										{
+											"key": "did",
+											"value": "did-test0021"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "是否存在",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/didManager/exists?did=did-test0012",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"didManager",
+										"exists"
+									],
+									"query": [
+										{
+											"key": "did",
+											"value": "did-test0012"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "创建",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"did\":\"did-test005\",\n    \"didDocument\":\"1234567\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/didManager/create",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"didManager",
+										"create"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "更新",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"did\":\"did-test003\",\n    \"didDocument\":\"1234567890\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/didManager/update",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"didManager",
+										"update"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "部署DID合约",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contractName\":\"DID_MANAGER9\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/didManager/deploy",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"didManager",
+										"deploy"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "loadDID合约",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contractName\":\"DID_MANAGER8\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/didManager/load",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"didManager",
+										"load"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "ResourceDomain",
+					"item": [
+						{
+							"name": "部署",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contractName\":\"RESOURCE_DOMAIN\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/resourceDomain/deploy",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"resourceDomain",
+										"deploy"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "load合约",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    // \"contractName\":\"rs_domian_test01\"\n    \"contractName\":\"RESOURCE_DOMAIN\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/resourceDomain/load",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"resourceDomain",
+										"load"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "save",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"domainAddress\":\"test02\",\n    \"details\":\"1234567\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/resourceDomain/save",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"resourceDomain",
+										"save"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/resourceDomain/get?domainAddress=test02",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"resourceDomain",
+										"get"
+									],
+									"query": [
+										{
+											"key": "domainAddress",
+											"value": "test02"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "exists",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/resourceDomain/exists?domainAddress=test01",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"resourceDomain",
+										"exists"
+									],
+									"query": [
+										{
+											"key": "domainAddress",
+											"value": "test01"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "BusinessContract",
+					"item": [
+						{
+							"name": "部署",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contractName\":\"BUSINESS_CONTRACT1\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/businessContract/deploy",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"businessContract",
+										"deploy"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "load合约",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contractName\":\"BUSINESS_CONTRACT1\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/businessContract/load",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"businessContract",
+										"load"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "save",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"businessAddress\":\"test02\",\n    \"details\":\"1234567\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/businessContract/save",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"businessContract",
+										"save"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:13000/v1/openapi/businessContract/get?businessAddress=test02",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "13000",
+									"path": [
+										"v1",
+										"openapi",
+										"businessContract",
+										"get"
+									],
+									"query": [
+										{
+											"key": "businessAddress",
+											"value": "test02"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	]
+}

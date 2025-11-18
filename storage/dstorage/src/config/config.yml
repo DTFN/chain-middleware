@@ -1,0 +1,37 @@
+#监听文件的服务接口
+http:
+    listen_ip: 0.0.0.0
+    listen_port: 4433
+    doc_root: "./tmp"
+
+chain:
+    type: "chainmaker"
+    sdk_path: "./chainmaker/config.yml"
+    account_path: "./"
+    ledger_id: 1
+
+    msp_id: "Org1MSP"
+    crypto_path: "./organizations/peerOrganizations/org1.example.com"
+    peer_endpoint: "localhost:7051"
+    gateway_peer: "peer0.org1.example.com"
+    channel_name: "mychannel"
+    chaincode_name: "my_storage"
+
+    eth_url: "127.0.0.1:9545"
+    eth_account: "0xxxxx"
+    
+ipfs:
+    address: 
+     - "127.0.0.1:5001"
+     - "127.0.0.1:5002"
+     - "127.0.0.1:5003"
+     - "127.0.0.1:5004"
+     - "127.0.0.1:5005"
+     - "127.0.0.1:5006"
+
+isal:
+    isal_k: 4
+    isal_m: 2
+
+script:
+    path: "./script"

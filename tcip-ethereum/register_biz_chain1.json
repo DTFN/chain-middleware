@@ -1,0 +1,8 @@
+{
+  "version": 0,
+  "operate": 0,
+  "eth_config": {
+    "chain_rid": "chain_eth_01",
+    "chain_id": 1
+  }
+}

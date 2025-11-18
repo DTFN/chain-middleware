@@ -1,0 +1,71 @@
+{
+  "version": 0,
+  "operate": 0,
+  "cross_chain_event": {
+    "chain_rid": "chain002",
+    "contract_name": "0xc24e13f273ce010f4bfa9b16544832d305272b65",
+    "cross_chain_name": "test",
+    "cross_chain_flag": "test",
+    "trigger_condition": 1,
+    "event_name": "Test(string,string)",
+    "timeout": 1000,
+    "cross_type": 1,
+    "bcos_event_data_type": [
+      0, 0, 0
+    ],
+    "is_cross_chain": "one == \"1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8\"",
+    "confirm_info": {
+      "chain_rid": "chain002",
+      "contract_name": "0xc24e13f273ce010f4bfa9b16544832d305272b65",
+      "method": "CrossChainConfirm",
+      "parameter": "[\"%s\"]",
+      "param_data": [
+        1
+      ],
+      "param_data_type": [
+        0
+      ],
+      "abi": "[{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"CrossChainCancel\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"CrossChainConfirm\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"CrossChainSave\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"CrossChainTry\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"query\",\"outputs\":[{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"flag\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"key\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"string\"}],\"name\":\"Test\",\"type\":\"event\"}]"
+    },
+    "cancel_info": {
+      "chain_rid": "chain002",
+      "contract_name": "1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8",
+      "method": "CrossChainCancel",
+      "parameter": "[\"%s\"]",
+      "param_data": [
+        1
+      ],
+      "param_data_type": [
+        0
+      ],
+      "abi": "[{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"CrossChainCancel\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"CrossChainConfirm\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"CrossChainSave\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"CrossChainTry\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"query\",\"outputs\":[{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"flag\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"key\",\"type\":\"string\"},{\"indexed\":true,\"name\":\"value\",\"type\":\"string\"}],\"name\":\"Test\",\"type\":\"event\"}]"
+    },
+    "abi": [
+      "{\"name\":\"key\",\"type\":\"string\"}","{\"name\":\"value\",\"type\":\"string\"}"
+    ],
+    "cross_chain_create": [
+      {
+        "gateway_id":"0",
+        "chain_rid": "chainmaker001",
+        "contract_name": "erc20_01",
+        "method": "invoke_contract",
+        "parameter": "{\"method\":\"transfer\",\"to\":\"%s\",\"value\":\"10\"}",
+        "param_data": [0],
+        "confirm_info": {
+          "chain_rid": "chainmaker001",
+          "contract_name": "erc20_01",
+          "method": "invoke_contract",
+          "parameter": "{\"method\":\"transfer\",\"to\":\"%s\",\"value\":\"0\"}",
+          "param_data": [0]
+        },
+        "cancel_info": {
+          "chain_rid": "chainmaker001",
+          "contract_name": "erc20_01",
+          "method": "invoke_contract",
+          "parameter": "{\"method\":\"transfer\",\"to\":\"%s\",\"value\":\"-10\"}",
+          "param_data": [0]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,85 @@
+# server version
+version: v1.2.4
+
+spring:
+  datasource:
+    url: jdbc:h2:file:../h2/front2.2;DB_CLOSE_ON_EXIT=FALSE
+    databaseName: db
+    driverClassName: org.h2.Driver
+    serverName:
+    username:
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    database: H2
+    openInView: false
+    show_sql: false
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+      naming-strategy: org.hibernate.cfg.EJB3NamingStrategy
+      session:
+        events:
+          log: false
+    properties:
+      hibernate.cache.use_query_cache: false
+      hibernate.generate_statistics: false
+  h2:
+    console:
+      enabled: true
+      path: /console
+      settings:
+        web-allow-others: false
+        trace: true
+  http:
+    multipart:
+      max-request-size: 30MB # request max size
+      max-file-size: 20MB # single file size
+
+server:
+  port: 5007
+  context-path: /chain-proxy
+  connection-timeout: 30000
+  tomcat:
+    max-threads: 200
+    max-connections: 10000
+
+sdk:
+  corePoolSize: 50
+  maxPoolSize: 100
+  queueCapacity: 100
+  ip: 192.168.1.144
+  rpcPort: 56656
+  certPath: conf # cert path of relative or absolute
+  isGm: false
+  logLevel: "debug"
+  defaultLedgerId: 1
+  messageTimeout: 10000
+  receiptTimeout: 10000
+  keyStoreDir: accounts
+  fileFormat: pem
+
+logging:
+  config: classpath:log4j2.xml
+  level:
+    com.lingshu.bsp.front: info
+
+constant:
+  keyServer: 192.168.1.78:5004 # signer服务的IP:Port（单个）
+  nodePath: /data # node's absolute path to read configuration and monitor node's log
+  aesKey: 111
+  transMaxWait: 30
+  monitorDisk: /
+  monitorEnabled: true
+  http_read_timeOut: 100000
+  http_connect_timeOut: 100000
+  # event sync map task (unit: ms)
+  eventRegisterTaskFixedDelay: 5000
+  syncEventMapTaskFixedDelay: 60000
+  # sync stat log data task (unit: ms)
+  syncStatLogTime: 5000
+  syncStatLogCountLimit: 10000
+  statLogEnabled: false
+  # get event callback wait (s)
+  eventCallbackWait: 4
+  signKey:

@@ -1,0 +1,24 @@
+include(GNUInstallDirs)
+include(ExternalProject)
+
+
+# 编译库
+if (NOT FABRICSDK_ROOT_DIR)
+    set(INSTALL_DIR ${CMAKE_SOURCE_DIR}/deps)
+
+    set(FABRICSDK_ROOT_DIR ${INSTALL_DIR})
+    unset(INSTALL_DIR)
+endif()
+
+
+# 创建导入库
+set(FABRICSDK_INCLUDE_DIR ${FABRICSDK_ROOT_DIR}/include)
+set(FABRICSDK_LIBRARY_DIR ${FABRICSDK_ROOT_DIR}/lib)
+file(MAKE_DIRECTORY ${FABRICSDK_INCLUDE_DIR})
+
+add_library(Fabricsdk SHARED IMPORTED)
+set_target_properties(Fabricsdk PROPERTIES
+    IMPORTED_LOCATION ${FABRICSDK_LIBRARY_DIR}/libfabric_sdk.so
+)
+
+set_property(TARGET Fabricsdk PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${FABRICSDK_INCLUDE_DIR})

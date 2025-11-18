@@ -1,0 +1,62 @@
+{
+  "version": 0,
+  "operate": 0,
+  "cross_chain_event": {
+    "chain_rid": "chain_cm_01",
+    "contract_name": "erc20_01_eth",
+    "cross_chain_name": "test",
+    "cross_chain_flag": "test",
+    "trigger_condition": 1,
+    "event_name": "transfer",
+    "timeout": 1000,
+    "cross_type": 1,
+    "chainmaker_event_data_type": [
+      0, 0, 0
+    ],
+    "is_cross_chain": "one == \"cm2eth\"",
+    "confirm_info": {
+      "chain_rid": "chain_cm_01",
+      "contract_name": "erc20_01_eth",
+      "method": "invoke_contract",
+      "parameter": "{\"method\":\"transfer\",\"to\":\"%s\",\"value\":\"0\"}",
+      "param_data": [0]
+    },
+    "cancel_info": {
+      "chain_rid": "chain_cm_01",
+      "contract_name": "erc20_01_eth",
+      "method": "invoke_contract",
+      "parameter": "{\"method\":\"transfer\",\"to\":\"%s\",\"value\":\"%s\"}",
+      "param_data": [0, 2]
+    },
+    "cross_chain_create": [
+      {
+        "gateway_id":"1",
+        "chain_rid": "chain_eth_01",
+        "contract_name": "0xf3dc3b9a436b5d8a1981a07a2d222cce55d95e3e",
+        "method": "CrossChainTry",
+        "parameter": "[\"%s\",\"%s\"]",
+        "param_data": [0, 1],
+        "param_data_type": [0, 0],
+        "abi": "[{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"CrossChainCancel\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"CrossChainConfirm\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"CrossChainSave\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"CrossChainTry\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"query\",\"outputs\":[{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"flag\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"key\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"string\"}],\"name\":\"TestEth\",\"type\":\"event\"}]",
+        "confirm_info": {
+          "chain_rid": "chain_eth_01",
+          "contract_name": "0xf3dc3b9a436b5d8a1981a07a2d222cce55d95e3e",
+          "method": "CrossChainConfirm",
+          "parameter": "[\"%s\"]",
+          "param_data": [0],
+          "param_data_type": [0],
+          "abi": "[{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"CrossChainCancel\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"CrossChainConfirm\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"CrossChainSave\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"CrossChainTry\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"query\",\"outputs\":[{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"flag\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"key\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"string\"}],\"name\":\"TestEth\",\"type\":\"event\"}]"
+        },
+        "cancel_info": {
+          "chain_rid": "chain_eth_01",
+          "contract_name": "0xf3dc3b9a436b5d8a1981a07a2d222cce55d95e3e",
+          "method": "CrossChainCancel",
+          "parameter": "[\"%s\"]",
+          "param_data": [0],
+          "param_data_type": [0],
+          "abi": "[{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"CrossChainCancel\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"CrossChainConfirm\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"CrossChainSave\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"CrossChainTry\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"query\",\"outputs\":[{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"flag\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"key\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"string\"}],\"name\":\"TestEth\",\"type\":\"event\"}]"
+        }
+      }
+    ]
+  }
+}

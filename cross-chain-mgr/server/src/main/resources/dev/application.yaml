@@ -1,0 +1,237 @@
+server:
+  port: 13000
+  swagger:
+    enable: true
+
+
+contract:
+  relayer:
+    did-manager: "DID_MANAGER"
+    resource-domain: "RESOURCE_DOMAIN0913"
+  business:
+    #    chainmaker:
+    #      did-manager: "0x01"
+    #      business-center: "0x03"
+    eth:
+      did-manager: "0xf6c138736c3b0eedf6f7dff15a753c55ce301d18"
+      business-center: "0xfea4d91dd03cab832bdeae930cc023ffae177bbb"
+
+#contract-name:
+#  did-manager: "DID_MANAGER"
+#  resource-domain: "RESOURCE_DOMAIN0913"
+#  business: BUSINESS_CONTRACT
+#  business-wasm: BUSINESS_CONTRACT_WASM
+#
+contract-address:
+  #  lingshu-business: "0xe9f5d5ea58ed76c0780564ad3d5fae3a524e5025"
+  ethereum-cross-save-business: "0xff215f712a1588ddb7061c645fac66283a5a9c27"
+#  ethereum-business: "0x6d398d852d99043e788ad96086717fcddcd2aefb"
+#  bcos-business: "0x4032d538c2ac1ef968d09a628c597545b9a44218"
+
+
+gas:
+  threshold:
+    sms-template: "SMS_254585014"
+    notify-retry: 5
+    cache-prefix: "gas-threshold:"
+
+## 国密PK模式
+#chainmaker:
+#  # 是否启用
+#  enable: true
+#  isGm: true
+#  # 链ID
+#  chainId: gmchain
+#  # 客户端用户私钥路径
+#  userSignKeyFilePath: './chainmaker/gmdev/user/gmadmin1.key'
+#  crypto:
+#    hash: SM3
+#  authType: public
+#  nodes:
+#    - nodeAddr: 192.168.3.157:42301
+#      connCnt: 32
+#  rpcClient:
+#    maxReceiveMessageSize: 16
+
+# 证书模式
+#chainmaker:
+#  # 是否启用
+#  enable: true
+#  # 链ID
+#  chainId: chain1
+#  isGm: true
+#  # 组织ID
+#  orgId: "wx-org1.chainmaker.org"
+#  # 客户端用户私钥路径
+#  userKeyFilePath: "./chainmaker/dev/user/admin1/admin1.tls.key"
+#  # 客户端用户证书路径
+#  userCrtFilePath: "./chainmaker/dev/user/admin1/admin1.tls.crt"
+#  # 客户端用户交易签名私钥路径
+#  userSignKeyFilePath: "./chainmaker/dev/user/admin1/admin1.sign.key"
+#  # 客户端用户交易签名证书路径
+#  userSignCrtFilePath: "./chainmaker/dev/user/admin1/admin1.sign.crt"
+#  # 认证方式
+#  authType: permissionedWithcert
+#  nodes:
+#    - # 节点地址，格式为：IP:端口:连接数
+#      nodeAddr: 192.168.2.166:12301
+#      # 节点连接数
+#      connCnt: 8
+#      # RPC连接是否启用双向TLS认证
+#      enableTls: true
+#      # TLS hostname
+#      tlsHostName: chainmaker.org
+#      # 信任证书池路径
+#      trustRootPaths:
+#        - "./chainmaker/dev/ca"
+#  rpcClient:
+#    maxReceiveMessageSize: 16
+
+# 证书模式 共瑞（汉权）测试机器
+chainmaker:
+  # 是否启用
+  enable: true
+  # 链ID chain1 业务链 chain3 中继链
+  chainId: chain3
+  # 是否使用国密算法
+  isGm: false
+  # 组织ID
+  orgId: "wx-org.chainmaker.org"
+  #  # 服务端ca配置
+  #  cryptoConfigPath: "./chainmaker/test/crypto.yml"
+  # 客户端用户私钥路径
+  userKeyFilePath: "./chainmaker/tldev/crypto-config/wx-org.chainmaker.org/user/admin1/admin1.tls.key"
+  # 客户端用户证书路径
+  userCrtFilePath: "./chainmaker/tldev/crypto-config/wx-org.chainmaker.org/user/admin1/admin1.tls.crt"
+  # 客户端用户交易签名私钥路径
+  userSignKeyFilePath: "./chainmaker/tldev/crypto-config/wx-org.chainmaker.org/user/admin1/admin1.sign.key"
+  # 客户端用户交易签名证书路径
+  userSignCrtFilePath: "./chainmaker/tldev/crypto-config/wx-org.chainmaker.org/user/admin1/admin1.sign.crt"
+  # 认证方式
+  authType: permissionedWithcert
+  nodes:
+    - # 节点地址，格式为：IP:端口:连接数
+      #      nodeAddr: 192.168.3.193:12301
+      nodeAddr: 192.168.3.62:12301
+      # 节点连接数
+      connCnt: 8
+      # RPC连接是否启用双向TLS认证
+      enableTls: true
+      # TLS hostname
+      #      tlsHostName: consensus1-69vkhk7org.cm-0rjni1m0oj
+      tls_host_name: "chainmaker.org"
+      # 信任证书池路径
+      trustRootPaths:
+        #        - "./chainmaker/test/ca"
+        - "./chainmaker/tldev/crypto-config/wx-org.chainmaker.org/ca"
+  rpcClient:
+    maxReceiveMessageSize: 16
+
+# 证书模式 共瑞（汉权）测试机器
+chainmaker-business:
+  # 是否启用
+  enable: true
+  # 链ID chain1 业务链 chain3 中继链
+  chainId: chain1
+  # 是否使用国密算法
+  isGm: false
+  # 组织ID
+  orgId: "wx-org.chainmaker.org"
+  #  # 服务端ca配置
+  #  cryptoConfigPath: "./chainmaker/test/crypto.yml"
+  # 客户端用户私钥路径
+  userKeyFilePath: "./chainmaker/tldev/crypto-config/wx-org.chainmaker.org/user/admin1/admin1.tls.key"
+  # 客户端用户证书路径
+  userCrtFilePath: "./chainmaker/tldev/crypto-config/wx-org.chainmaker.org/user/admin1/admin1.tls.crt"
+  # 客户端用户交易签名私钥路径
+  userSignKeyFilePath: "./chainmaker/tldev/crypto-config/wx-org.chainmaker.org/user/admin1/admin1.sign.key"
+  # 客户端用户交易签名证书路径
+  userSignCrtFilePath: "./chainmaker/tldev/crypto-config/wx-org.chainmaker.org/user/admin1/admin1.sign.crt"
+  # 认证方式
+  authType: permissionedWithcert
+  nodes:
+    - # 节点地址，格式为：IP:端口:连接数
+      #      nodeAddr: 192.168.3.193:12301
+      nodeAddr: 192.168.3.62:12301
+      # 节点连接数
+      connCnt: 8
+      # RPC连接是否启用双向TLS认证
+      enableTls: true
+      # TLS hostname
+      #      tlsHostName: consensus1-69vkhk7org.cm-0rjni1m0oj
+      tls_host_name: "chainmaker.org"
+      # 信任证书池路径
+      trustRootPaths:
+        #        - "./chainmaker/test/ca"
+        - "./chainmaker/tldev/crypto-config/wx-org.chainmaker.org/ca"
+  rpcClient:
+    maxReceiveMessageSize: 16
+
+# 测试ca链
+#chainmaker:
+#  # 是否启用
+#  enable: true
+#  # 链ID
+#  chainId: ZW_C845899_001
+#  # 组织ID
+#  orgId: "上海浦江数链数字科技有限公司（测试）-通用测试链.cm-0rjni1m0oj"
+#  # 服务端ca配置
+#  cryptoConfigPath: "./chainmaker/test/crypto.yml"
+#  # 客户端用户私钥路径
+#  userKeyFilePath: "./chainmaker/test/cm-0rjni1m0oj_tls.key"
+#  # 客户端用户证书路径
+#  userCrtFilePath: "./chainmaker/test/cm-0rjni1m0oj_tls.crt"
+#  # 客户端用户交易签名私钥路径
+#  userSignKeyFilePath: "./chainmaker/test/cm-0rjni1m0oj_sign.key"
+#  # 客户端用户交易签名证书路径
+#  userSignCrtFilePath: "./chainmaker/test/cm-0rjni1m0oj_sign.crt"
+#  # 认证方式
+#  authType: permissionedWithcert
+#  nodes:
+#    - # 节点地址，格式为：IP:端口:连接数
+#      nodeAddr: 112.64.115.235:32010
+#      # 节点连接数
+#      connCnt: 8
+#      # RPC连接是否启用双向TLS认证
+#      enableTls: true
+#      # TLS hostname
+#      tlsHostName: consensus1-69vkhk7org.cm-0rjni1m0oj
+#      # 信任证书池路径
+#      trustRootPaths:
+#        - "./chainmaker/test/ca"
+#  rpcClient:
+#    maxReceiveMessageSize: 16
+
+#universal:
+#  register-code: 666666
+
+lingshu:
+  enable: true
+
+ethereum:
+  enable: true
+  ip: 192.168.1.144
+  port: 8545
+
+bsc:
+  enable: true
+  ip: 192.168.1.144
+  port: 8545
+
+bcos:
+  enable: true
+
+fabric:
+  enable: true
+  agent: 192.168.1.144:25007
+
+file-store-path: /tmp/crossChain
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    prometheus:
+      enabled: true

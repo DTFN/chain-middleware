@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: cross-chain-mgr
+  config:
+    import:
+      - classpath:dev/application.yaml

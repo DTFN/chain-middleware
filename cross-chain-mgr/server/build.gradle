@@ -1,0 +1,130 @@
+// 定义项目依赖
+dependencies {
+    // Google Gson库，用于JSON序列化和反序列化
+    api 'com.google.code.gson:gson:2.8.9'
+
+    // Javassist库，用于字节码操作和动态编程
+    implementation 'org.javassist:javassist:3.30.2-GA'
+
+    // ShedLock分布式锁框架，用于Spring环境
+//    implementation 'net.javacrumbs.shedlock:shedlock-spring:2.3.0'
+
+    // ShedLock的Redis提供者实现
+//    implementation 'net.javacrumbs.shedlock:shedlock-provider-redis-spring:2.3.0'
+
+    // RocketMQ Spring Boot启动器，用于消息队列功能
+//    implementation('org.apache.rocketmq:rocketmq-spring-boot-starter:2.0.3')
+
+    // Alibaba Sentinel注解方式的AOP支持
+    implementation 'com.alibaba.csp:sentinel-annotation-aspectj:1.8.4'
+
+    // 引入项目内部模块":nft-flow-common"，并排除sentinel-cluster-server-default模块
+//    implementation(project(":nft-flow-common")) {
+//        exclude group: 'com.alibaba.csp', module: 'sentinel-cluster-server-default'
+//    }
+
+    // Zip4j库，用于ZIP文件处理
+    implementation 'net.lingala.zip4j:zip4j:1.3.1'
+
+    // 引入项目内部模块":nft-component:security"
+//    implementation project(":nft-component:security")
+
+    // Apache POI库，用于处理Office文档（Excel等）
+    implementation 'org.apache.poi:poi-ooxml:4.1.1'
+    implementation 'org.apache.poi:poi-ooxml-schemas:3.17'
+
+    // 阿里云核心SDK
+//    implementation 'com.aliyun:aliyun-java-sdk-core:4.1.1'
+
+    // 阿里云内容安全（绿网）SDK
+//    implementation 'com.aliyun:aliyun-java-sdk-green:3.6.5'
+
+    // 阿里云对象存储OSS SDK
+//    implementation 'com.aliyun.oss:aliyun-sdk-oss:2.8.3'
+
+    // 引入本地libs目录下的所有jar文件
+    api fileTree(dir: '../libs', includes: ['*.jar'])
+
+    //长安链sdk
+    implementation("org.chainmaker:chainmaker-sdk-java:2.3.2") {
+//        exclude group: 'io.netty', module: 'netty-handler'
+//        exclude group: 'io.netty', module: 'netty-proxy'
+    }
+
+    // 引入项目内部模块":yeepay"
+//    implementation (project(":yeepay"))
+
+    // Bouncy Castle加密库的PKIX和Prov模块
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+
+    // Apache Commons Collections工具库
+    implementation 'commons-collections:commons-collections:3.2.2'
+
+    // Netty网络应用框架的核心组件
+    implementation 'io.netty:netty-handler:4.1.53.Final'
+    implementation("io.netty:netty-tcnative-boringssl-static:2.0.48.Final")
+
+    // gRPC相关组件
+    implementation 'io.grpc:grpc-api:1.40.1'        // gRPC API
+    implementation 'io.grpc:grpc-netty:1.40.1'      // gRPC Netty实现
+    implementation 'io.grpc:grpc-stub:1.40.1'       // gRPC Stub
+    implementation 'io.grpc:grpc-protobuf:1.40.1'   // gRPC Protobuf支持
+
+    // Alibaba Fastjson JSON处理库（新版）
+    implementation 'com.alibaba:fastjson:2.0.32'
+
+    // 敏感词处理库
+    implementation 'com.github.houbb:sensitive-word:0.16.1'
+
+    // Aviator表达式求值引擎
+    implementation 'com.googlecode.aviator:aviator:5.4.1'
+
+    // Apache HttpComponents MIME支持
+    implementation 'org.apache.httpcomponents:httpmime:4.5.14'
+
+    // Google Protocol Buffers核心库
+    implementation 'com.google.protobuf:protobuf-java:3.22.2'
+    implementation 'com.google.protobuf:protobuf-java-util:3.22.2'
+
+    // Web3j以太坊开发库的各个模块
+//    implementation 'org.web3j:abi:5.0.0'      // ABI编码解码
+//    implementation 'org.web3j:core:5.0.0'     // 核心功能
+//    implementation 'org.web3j:utils:5.0.0'    // 工具类
+    implementation 'org.web3j:abi:4.9.7'      // ABI编码解码
+    implementation 'org.web3j:core:4.9.7'     // 核心功能
+    implementation 'org.web3j:utils:4.9.7'    // 工具类
+
+    // MinIO对象存储客户端
+//    implementation 'io.minio:minio:8.2.1'
+
+    // 阿里云内容安全服务SDK
+//    implementation("com.aliyun:green20220302:2.2.8")
+
+    // 引入项目内部模块":nft-component:digital-identity"
+//    api project(":nft-component:digital-identity")
+
+    // 引入项目内部模块":nft-component:uni-trust"
+//    api project(":nft-component:uni-trust")
+
+    implementation 'commons-io:commons-io:2.20.0'
+    implementation 'commons-cli:commons-cli:1.2'
+
+    //零数链sdk
+    implementation('com.lingshu.chain.java-sdk:lingshuchain-java-sdk:2.2.10') {
+        exclude(module: 'slf4j-log4j12')
+    }
+
+    // OpenFeign
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:3.0.3'
+
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
+
+    // 监控
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation "io.micrometer:micrometer-registry-prometheus"
+
+    // 邮件
+    implementation "com.sun.mail:javax.mail:1.6.2"
+}

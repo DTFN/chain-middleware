@@ -1,0 +1,7 @@
+// 设置根项目的名称为'cross-chain-mgr'
+rootProject.name = 'cross-chain-mgr'
+
+// 包含名为'server'的子项目，使其成为多模块项目的一部分
+include 'server'
+include 'server-bcos'
+

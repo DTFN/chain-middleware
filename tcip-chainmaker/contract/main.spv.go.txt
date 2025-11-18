@@ -1,0 +1,229 @@
+/*
+ Copyright (C) THL A29 Limited, a Tencent company. All rights reserved.
+   SPDX-License-Identifier: Apache-2.0
+*/
+
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"log"
+	"strconv"
+
+	"chainmaker.org/chainmaker/common/v2/crypto/hash"
+	"chainmaker.org/chainmaker/contract-sdk-go/v2/pb/protogo"
+	"chainmaker.org/chainmaker/contract-sdk-go/v2/sandbox"
+	"chainmaker.org/chainmaker/contract-sdk-go/v2/sdk"
+	"chainmaker.org/chainmaker/pb-go/v2/common"
+	"chainmaker.org/chainmaker/utils/v2"
+	googleProto "github.com/gogo/protobuf/proto"
+)
+
+const (
+	blockHeaderKey = "bh"
+)
+
+type spv struct{}
+
+// 初始化合约，初始化网关id和跨链id
+func (c *spv) InitContract() protogo.Response {
+	return sdk.Success([]byte("Init Success"))
+}
+
+func (c *spv) UpgradeContract() protogo.Response {
+	return sdk.Success([]byte("Upgrade success"))
+}
+
+// 调用合约
+func (c *spv) InvokeContract(method string) protogo.Response {
+	switch method {
+	case "sync_block_header":
+		return c.syncBlockHeader()
+	case "get_block_header":
+		return c.getBlockHeader()
+	case "verify_tx":
+		return c.verifyTx()
+	default:
+		return sdk.Error("invalid method")
+	}
+}
+
+// 保存区块头
+func (c *spv) syncBlockHeader() protogo.Response {
+	params := sdk.Instance.GetArgs()
+
+	// 获取参数
+	blockHeightByte := params["block_height"]
+	if blockHeightByte == nil {
+		return sdk.Error("fail to get  block_height fact bytes")
+	}
+	blockHeight, err := strconv.Atoi(string(blockHeightByte))
+	if err != nil {
+		return sdk.Error("Atoi error, block_height must be number")
+	}
+	BlockHeaderByte := params["block_header"]
+	if BlockHeaderByte == nil {
+		return sdk.Error("fail to get  block_height fact bytes")
+	}
+	var blockHeader common.BlockHeader
+	err = googleProto.Unmarshal(BlockHeaderByte, &blockHeader)
+	if err != nil {
+		return sdk.Error("Unmarshal blockHeader error：" + err.Error())
+	}
+	if blockHeight > 0 {
+		preBlockHeader, err := getPreBlockHeader(blockHeight - 1)
+		if err != nil {
+			return sdk.Error("Get pre BlockHeaher error：" + err.Error())
+		}
+		if string(preBlockHeader.BlockHash) != string(blockHeader.PreBlockHash) {
+			return sdk.Error("Block Hash check error：" + err.Error())
+		}
+	}
+	// 保存gateway
+	err = sdk.Instance.PutStateByte(parseBlockHeaderKey(string(blockHeightByte)),
+		parseBlockHeaderKey(string(blockHeightByte)), BlockHeaderByte)
+	if err != nil {
+		return sdk.Error("fail to save block header")
+	}
+	return sdk.Success([]byte("success"))
+}
+
+// 查询区块头，调试用
+func (c *spv) getBlockHeader() protogo.Response {
+	params := sdk.Instance.GetArgs()
+
+	// 获取参数
+	blockHeightByte := params["block_height"]
+	if blockHeightByte == nil {
+		return sdk.Error("fail to get  block_height fact bytes")
+	}
+	blockHeaderByte, err := sdk.Instance.GetStateByte(parseBlockHeaderKey(string(blockHeightByte)),
+		parseBlockHeaderKey(string(blockHeightByte)))
+	if err != nil {
+		return sdk.Error("GeBlockHeader error：" + err.Error())
+	}
+	var blockHeader common.BlockHeader
+	err = googleProto.Unmarshal(blockHeaderByte, &blockHeader)
+	if err != nil {
+		return sdk.Error("Unmarshal blockHeader error：" + err.Error())
+	}
+	if len(blockHeader.TxRoot) == 0 {
+		return sdk.Error("GeBlockHeader error")
+	}
+	return sdk.Success(blockHeightByte)
+}
+
+// 验证交易
+func (c *spv) verifyTx() protogo.Response {
+	params := sdk.Instance.GetArgs()
+
+	hashArrayByte, ok := params["hash_array"]
+	if !ok {
+		return sdk.Error("hash_array not found")
+	}
+	hashArray := make([][]byte, 0)
+	err := json.Unmarshal(hashArrayByte, &hashArray)
+	if err != nil {
+		return sdk.Error("Unmarshal txProveByte error：" + err.Error())
+	}
+	txInfoByte, ok := params["tx_byte"]
+	if !ok {
+		return sdk.Error("tx_byte not found")
+	}
+	var txInfo common.TransactionInfo
+	err = googleProto.Unmarshal(txInfoByte, &txInfo)
+	if err != nil {
+		return sdk.Error("Unmarshal txByte error：" + err.Error())
+	}
+
+	blockHeaderByte, err := sdk.Instance.GetStateByte(parseBlockHeaderKey(fmt.Sprintf("%d", txInfo.BlockHeight)),
+		parseBlockHeaderKey(fmt.Sprintf("%d", txInfo.BlockHeight)))
+	if err != nil {
+		return sdk.Error("GeBlockHeader error：" + err.Error())
+	}
+
+	hashType, ok := params["hash_type"]
+	if !ok {
+		return sdk.Error("hash_type not found")
+	}
+	var blockHeader common.BlockHeader
+	err = googleProto.Unmarshal(blockHeaderByte, &blockHeader)
+	if err != nil {
+		return sdk.Error("Unmarshal blockHeader error：" + err.Error())
+	}
+	txHash, err := utils.CalcTxHashWithVersion(
+		string(hashType), txInfo.Transaction, int(blockHeader.BlockVersion))
+	if err != nil {
+		return sdk.Error("GetByStrType tx hash error：" + err.Error())
+	}
+
+	res := prove(hashArray, blockHeader.TxRoot, txHash, txInfo.TxIndex, string(hashType))
+	if res {
+		return sdk.Success([]byte("true"))
+	}
+
+	return sdk.Success([]byte("false"))
+}
+
+func parseBlockHeaderKey(blockHeight string) string {
+	return fmt.Sprintf("%s%s", blockHeaderKey, blockHeight)
+}
+
+func getPreBlockHeader(blockHeight int) (*common.BlockHeader, error) {
+	blockKey := parseBlockHeaderKey(fmt.Sprintf("%d", blockHeight))
+	blockHeaderByte, err := sdk.Instance.GetStateByte(blockKey, blockKey)
+	if err != nil {
+		return nil, fmt.Errorf("GeBlockHeader error: %s, %s", err.Error(), blockKey)
+	}
+	if blockHeaderByte == nil {
+		return nil, fmt.Errorf("GeBlockHeader error: blockHeaderByte nil, %s", blockKey)
+	}
+	var blockHeader common.BlockHeader
+	err = googleProto.Unmarshal(blockHeaderByte, &blockHeader)
+	if err != nil {
+		return nil, fmt.Errorf("Unmarshal blockHeaderByte error: %s, %s ", err.Error(), blockKey)
+	}
+	return &blockHeader, nil
+}
+
+func prove(path [][]byte, merkleRoot, txHash []byte, index uint32, hashType string) bool {
+	intermediateNodes := path
+	// Shortcut the empty-block case
+	if bytes.Equal(txHash[:], merkleRoot[:]) && index == 0 && len(intermediateNodes) == 0 {
+		return true
+	}
+
+	current := txHash
+	idx := index
+	proofLength := len(intermediateNodes)
+
+	numSteps := (proofLength)
+
+	for i := 0; i < numSteps; i++ {
+		next := intermediateNodes[i]
+		if idx%2 == 1 {
+			current, _ = hashMerkleBranches(hashType, next, current)
+		} else {
+			current, _ = hashMerkleBranches(hashType, current, next)
+		}
+		idx >>= 1
+	}
+
+	return bytes.Equal(current, merkleRoot)
+}
+
+func hashMerkleBranches(hashType string, left []byte, right []byte) ([]byte, error) {
+	data := make([]byte, len(left)+len(right))
+	copy(data[:len(left)], left)
+	copy(data[len(left):], right)
+	return hash.GetByStrType(hashType, data)
+}
+
+func main() {
+	err := sandbox.Start(new(spv))
+	if err != nil {
+		log.Fatal(err)
+	}
+}

@@ -1,0 +1,100 @@
+{
+  "name": "fabric_dev",
+  "version": "1.0.0",
+  "client": {
+    "organization": "org1.example.com",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        },
+        "orderer": "300"
+      }
+    }
+  },
+  "channels": {
+    "channel1": {
+      "orderers": ["orderer0.org1.example.com"],
+      "peers": {
+        "peer0.org1.example.com": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        },
+        "peer1.org1.example.com": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        }
+      }
+    }
+  },
+  "organizations": {
+    "org1.example.com": {
+      "mspid": "Org1MSP",
+      "peers": ["peer0.org1.example.com", "peer1.org1.example.com"],
+      "certificateAuthorities": ["ca-org1"],
+      "adminPrivateKeyPEM": {
+        "path": "/home/songzehao/fabric/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/5690141e13d360122cf5bda98fef0dae47b168018778092182cf294f5b21b23a_sk"
+      },
+      "signedCertPEM": {
+        "path": "/home/songzehao/fabric/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem"
+      }
+    }
+  },
+  "orderers": {
+    "orderer0.org1.example.com": {
+      "url": "grpcs://192.168.3.128:7050",
+      "mspid": "OrdererOrg1MSP",
+      "grpcOptions": {},
+      "tlsCACerts": {
+        "path": "/home/songzehao/fabric/organizations/ordererOrganizations/org1.example.com/orderers/orderer0.org1.example.com/tls/ca.crt"
+      },
+      "adminPrivateKeyPEM": {
+        "path": "/home/songzehao/fabric/organizations/ordererOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/7a7b1aa39e04f04c34aa3538c0e874c5166208400142ffd0d3bb5b01cf62bbaf_sk"
+      },
+      "signedCertPEM": {
+        "path": "/home/songzehao/fabric/organizations/ordererOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem"
+      }
+    }
+  },
+  "peers": {
+    "peer0.org1.example.com": {
+      "url": "grpcs://192.168.3.128:7051",
+      "grpcOptions": {
+        "request-timeout": 120001
+      },
+      "tlsCACerts": {
+        "path": "/home/songzehao/fabric/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
+      }
+    },
+    "peer1.org1.example.com": {
+      "url": "grpcs://192.168.3.128:7053",
+      "grpcOptions": {
+        "request-timeout": 120001
+      },
+      "tlsCACerts": {
+        "path": "/home/songzehao/fabric/organizations/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls/ca.crt"
+      }
+    }
+  },
+  "certificateAuthorities": {
+    "ca-org1": {
+      "url": "https://192.168.3.128:7054",
+      "grpcOptions": {
+        "verify": true
+      },
+      "tlsCACerts": {
+        "path": "/home/songzehao/fabric/ca-cert.pem"
+      },
+      "registrar": [
+        {
+          "enrollId": "admin",
+          "enrollSecret": "111"
+        }
+      ]
+    }
+  }
+}

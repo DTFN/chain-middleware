@@ -1,0 +1,9 @@
+{
+    "network-configs": {
+        "fabric_dev": {
+            "name": "Fabric for dev",
+            "profile": "./connection-profile/fabric_dev.json"
+        }
+    },
+    "license": "Apache-2.0"
+}

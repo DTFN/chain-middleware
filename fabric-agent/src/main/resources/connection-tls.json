@@ -1,0 +1,130 @@
+{
+  "name": "fabric_dev",
+  "version": "1.0.0",
+  "client": {
+    "organization": "org1.example.com",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        },
+        "orderer": "300"
+      }
+    },
+    "tlsCerts": {
+      "systemCertPool": true,
+      "client": {
+        "key": {
+          "path": "{organizationsPath}/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.key"
+        },
+        "cert": {
+          "path": "{organizationsPath}/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt"
+        }
+      }
+    }
+  },
+  "channels": {
+    "mychannel": {
+      "orderers": ["orderer.example.com"],
+      "peers": {
+        "peer0.org1.example.com": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        },
+        "peer0.org2.example.com": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        }
+      }
+    }
+  },
+  "organizations": {
+    "org1.example.com": {
+      "mspid": "Org1MSP",
+      "peers": ["peer0.org1.example.com"],
+      "certificateAuthorities": ["ca-org1"],
+      "adminPrivateKeyPEM": {
+        "path": "{organizationsPath}/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/priv_sk"
+      },
+      "signedCertPEM": {
+        "path": "{organizationsPath}/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem"
+      }
+    },
+    "org2.example.com": {
+      "mspid": "Org2MSP",
+      "peers": ["peer0.org2.example.com"],
+      "certificateAuthorities": ["ca-org1"],
+      "adminPrivateKeyPEM": {
+        "path": "{organizationsPath}/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore/priv_sk"
+      },
+      "signedCertPEM": {
+        "path": "{organizationsPath}/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/Admin@org2.example.com-cert.pem"
+      }
+    }
+  },
+  "orderers": {
+    "orderer.example.com": {
+      "url": "grpcs://localhost:7050",
+      "mspid": "OrdererOrg1MSP",
+      "grpcOptions": {},
+      "tlsCACerts": {
+        "path": "{organizationsPath}/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
+      },
+      "adminPrivateKeyPEM": {
+        "path": "{organizationsPath}/ordererOrganizations/example.com/users/Admin@example.com/msp/keystore/priv_sk"
+      },
+      "signedCertPEM": {
+        "path": "{organizationsPath}/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem"
+      }
+    }
+  },
+  "peers": {
+    "peer0.org1.example.com": {
+      "url": "grpcs://localhost:7051",
+      "grpcOptions": {
+        "request-timeout": 120001
+      },
+      "tlsCACerts": {
+        "path": "{organizationsPath}/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt",
+        "client": {
+          "keyfile": "{organizationsPath}/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.key",
+          "certfile": "{organizationsPath}/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt"
+        }
+      }
+    },
+    "peer0.org2.example.com": {
+      "url": "grpcs://localhost:9051",
+      "grpcOptions": {
+        "request-timeout": 120001
+      },
+      "tlsCACerts": {
+        "path": "{organizationsPath}/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt",
+        "client": {
+          "keyfile": "{organizationsPath}/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.key",
+          "certfile": "{organizationsPath}/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt"
+        }
+      }
+    }
+  },
+  "certificateAuthorities": {
+    "ca-org1": {
+      "url": "https://localhost:7054",
+      "grpcOptions": {
+        "verify": true
+      },
+      "tlsCACerts": {
+        "path": "{organizationsPath}/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt"
+      },
+      "registrar": [
+        {
+          "enrollId": "admin",
+          "enrollSecret": "111"
+        }
+      ]
+    }
+  }
+}

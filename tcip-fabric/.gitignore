@@ -1,0 +1,12 @@
+.idea/
+.vscode/
+.history/
+release/
+logs/
+config/crypto-config/
+main/relayer
+register.json
+update.json
+tcip-chainmaker
+./tcip-fabric
+./database
